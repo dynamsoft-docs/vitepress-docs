@@ -1,0 +1,127 @@
+#!/usr/bin/env node
+/**
+ * Vendors the corporate header/footer — markup and styling — from
+ * Docs-Template-Repo and the shared webres stylesheets into src/chrome/.
+ *
+ * Markup is read from a local checkout when available (DOCS_TEMPLATE_REPO env
+ * var, or ../documentation/Docs-Template-Repo relative to this repo's
+ * parent), always from the named branch via `git show`; falls back to GitHub
+ * raw. Template-repo stylesheets are read the same way; webres stylesheets
+ * are fetched from www.dynamsoft.com.
+ *
+ * Each stylesheet is transformed so the corporate cascade renders correctly
+ * inside a VitePress page without leaking into it:
+ *   1. relative url()s are absolutized against their source location
+ *      (template-repo assets resolve to GitHub raw — no product-site URLs),
+ *   2. rem sizes are converted to px (the fleet sizes rem against its own
+ *      html{font-size:10px}, which VitePress does not have),
+ *   3. @font-face blocks are hoisted out (they must stay top-level),
+ *   4. :root/html/body selectors are rewritten to :scope,
+ *   5. everything is wrapped in `@scope (.ds-corporate) { ... }`.
+ *
+ * Re-run periodically (or from CI) and commit the diff to pick up upstream
+ * chrome changes.
+ */
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const outDir = resolve(here, "../src/chrome");
+const localRepo =
+	process.env.DOCS_TEMPLATE_REPO ?? resolve(here, "../../documentation/Docs-Template-Repo");
+const branch = process.env.DOCS_TEMPLATE_BRANCH ?? "main";
+const rawBase = `https://raw.githubusercontent.com/dynamsoft-docs/Docs-Template-Repo/${branch}/`;
+const webres = "https://www.dynamsoft.com/webres/wwwroot/";
+
+const htmlFiles = [
+	{ src: "_includes/page_header.html", dest: "page-header.html" },
+	{ src: "_includes/page_footer.html", dest: "page-footer.html" },
+];
+
+// The complete stylesheet cascade head.html loads, in order.
+const cssSources = [
+	{ name: "dm-style", git: "assets/css/dm-style.min.css" },
+	{ name: "bootstrap", git: "assets/css/bootstrap.min.css" },
+	{ name: "font-awesome", git: "assets/css/font-awesome.min.css" },
+	{ name: "basis-bs", url: `${webres}css/docs/basis-bs.min.css` },
+	{ name: "header_bs", url: `${webres}css/header_bs.min.css` },
+	{ name: "basis", url: `${webres}css/docs/basis.min.css` },
+	{ name: "footer", url: `${webres}css/docs/footer.css` },
+];
+
+async function readTemplateFile(src) {
+	if (existsSync(resolve(localRepo, ".git"))) {
+		return execFileSync("git", ["-C", localRepo, "show", `${branch}:${src}`], {
+			encoding: "utf8",
+			maxBuffer: 16 * 1024 * 1024,
+		});
+	}
+	return fetchText(rawBase + src);
+}
+
+async function fetchText(url) {
+	const res = await fetch(url);
+	if (!res.ok) throw new Error(`fetch ${url}: HTTP ${res.status}`);
+	return res.text();
+}
+
+const transformHtml = (html) =>
+	html
+		// Same substitution the fleet's dev.sh applies at build time.
+		.replaceAll("assetsPath = '/webres/wwwroot'", `assetsPath = '${webres.slice(0, -1)}'`)
+		.replaceAll(/\{\{\s*assetsPath\s*\}\}/g, webres.slice(0, -1))
+		// Liquid current-year → token substituted at runtime.
+		.replaceAll("{{ 'now' | date: '%Y' }}", "%%YEAR%%");
+
+/** Make every relative url() absolute against the stylesheet's own URL. */
+const absolutizeUrls = (css, sourceUrl) =>
+	css.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/g, (match, quote, target) => {
+		if (/^(data:|https?:|\/\/|#)/i.test(target)) return match;
+		return `url(${quote}${new URL(target, sourceUrl).href}${quote})`;
+	});
+
+/** The fleet sizes rem against html{font-size:10px}; bake that in as px. */
+const remToPx = (css) =>
+	css.replace(/([\d.]+)rem\b/g, (_, n) => `${Math.round(Number.parseFloat(n) * 100) * 0.1}px`);
+
+/** @font-face must stay top-level; @scope would silently drop it. */
+function hoistFontFaces(css) {
+	const fontFaces = [];
+	const rest = css.replace(/@font-face\s*\{[^{}]*\}/g, (block) => {
+		fontFaces.push(block);
+		return "";
+	});
+	return { fontFaces, rest };
+}
+
+/** :root/html/body can never match inside @scope; retarget the scope root. */
+const rescopeRootSelectors = (css) =>
+	css.replace(/(^|[{},])\s*(:root|html|body)(?![\w-])/g, "$1:scope");
+
+mkdirSync(outDir, { recursive: true });
+
+for (const file of htmlFiles) {
+	const html = transformHtml(await readTemplateFile(file.src));
+	writeFileSync(resolve(outDir, file.dest), html);
+	console.log(`synced ${file.src} -> ${file.dest} (${html.length} bytes)`);
+}
+
+const fontSections = [];
+const scopedSections = [];
+for (const source of cssSources) {
+	const raw = source.git ? await readTemplateFile(source.git) : await fetchText(source.url);
+	const sourceUrl = source.git ? rawBase + source.git : source.url;
+	const css = remToPx(absolutizeUrls(raw.replace(/@charset[^;]+;/g, ""), sourceUrl));
+	const { fontFaces, rest } = hoistFontFaces(css);
+	if (fontFaces.length) fontSections.push(`/* ${source.name} */\n${fontFaces.join("\n")}`);
+	scopedSections.push(
+		`/* ${source.name}: ${sourceUrl} */\n@scope (.ds-corporate) {\n${rescopeRootSelectors(rest)}\n}`,
+	);
+	console.log(`synced css ${source.name} (${raw.length} bytes)`);
+}
+
+const chromeCss = `/* GENERATED by scripts/sync-chrome.mjs — do not edit by hand. */\n\n${fontSections.join("\n\n")}\n\n${scopedSections.join("\n\n")}\n`;
+writeFileSync(resolve(outDir, "chrome.css"), chromeCss);
+console.log(`wrote chrome.css (${chromeCss.length} bytes)`);

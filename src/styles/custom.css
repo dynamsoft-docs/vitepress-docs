@@ -1,0 +1,90 @@
+/* Dynamsoft brand accent (matches www.dynamsoft.com orange). */
+:root {
+	--vp-c-brand-1: #fe8e14;
+	--vp-c-brand-2: #f07c00;
+	--vp-c-brand-3: #d96f00;
+	--vp-c-brand-soft: rgba(254, 142, 20, 0.14);
+
+	/* Pre-hydration estimate of the corporate header height; the header
+	   component measures the real value after mount. */
+	--ds-header-height: 72px;
+}
+
+/* Hand the header height to VitePress — the default theme offsets its nav,
+   sidebar, and content paddings by --vp-layout-top-height. */
+:root:has(.ds-corporate-header) {
+	--vp-layout-top-height: var(--ds-header-height);
+}
+
+/* The header scrolls away (transform driven by the scroll handler) while
+   the VitePress nav bar docks at the viewport top. */
+.ds-corporate-header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 100;
+	transform: translateY(var(--ds-header-offset, 0));
+}
+
+/* Logged-out is the truthful state without the corporate session JS. */
+.ds-corporate .header-signin {
+	display: none !important;
+}
+
+/* The corporate layout.js animates menus open (jQuery slide); approximate
+   it whenever a panel is re-shown by the interaction shim. */
+@keyframes ds-menu-open {
+	from {
+		opacity: 0;
+		transform: translateY(-8px);
+	}
+}
+
+.ds-corporate #subMenu,
+.ds-corporate [id$="SubMenu"] {
+	animation: ds-menu-open 0.2s ease;
+}
+
+/* z-index lifts the footer over the fixed sidebar so it spans the full
+   width when scrolled into view. */
+.ds-corporate-footer {
+	position: relative;
+	z-index: 60;
+}
+
+/* The nav bar is the docs banner: breadcrumbs left; search, download, and
+   theme switcher right. VitePress reserves its title column as the sidebar
+   header and lets search grow into the middle — collapse both so the row
+   reads left-to-right (!important beats the theme's scoped [data-v]
+   selectors). */
+.VPNavBar .title {
+	display: none !important;
+}
+
+.VPNavBar.has-sidebar .content {
+	padding-left: 24px !important;
+}
+
+.VPNavBar .search,
+.VPNavBarSearch {
+	flex-grow: 0 !important;
+}
+
+/* The single "Download" nav item, styled as the corporate button. */
+.VPNavBarMenu .VPNavBarMenuLink {
+	margin-left: 12px;
+	padding: 5px 14px !important;
+	border: 1px solid var(--vp-c-brand-1);
+	border-radius: 4px;
+	color: var(--vp-c-brand-1) !important;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.6;
+	white-space: nowrap;
+}
+
+.VPNavBarMenu .VPNavBarMenuLink:hover {
+	background: var(--vp-c-brand-1);
+	color: #fff !important;
+}

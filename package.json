@@ -1,0 +1,36 @@
+{
+	"name": "dynamsoft-vitepress-theme",
+	"version": "0.1.0",
+	"description": "Shared Dynamsoft VitePress theme: corporate header/footer chrome, docs version switcher, and brand styles.",
+	"type": "module",
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
+	"exports": {
+		".": "./src/index.ts",
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"src",
+		"README.md"
+	],
+	"scripts": {
+		"sync-chrome": "node scripts/sync-chrome.mjs",
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"lint": "vp lint",
+		"fmt": "vp fmt",
+		"check": "vp check"
+	},
+	"peerDependencies": {
+		"vitepress": "^1.6.0 || ^2.0.0-alpha.1",
+		"vue": "^3.5.0"
+	},
+	"devDependencies": {
+		"typescript": "^5.8.0",
+		"vite-plus": "0.2.4",
+		"vitepress": "2.0.0-alpha.18",
+		"vue": "^3.5.0"
+	},
+	"engines": {
+		"node": ">=20.19.0"
+	}
+}
