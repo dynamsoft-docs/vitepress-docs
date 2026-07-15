@@ -27,22 +27,41 @@
 	transform: translateY(var(--ds-header-offset, 0));
 }
 
-/* Logged-out is the truthful state without the corporate session JS. */
+/* Logged-out is the truthful state without the corporate session JS, whose
+   job it is to reveal one of the two account blocks — reveal the visitor
+   ("Log in") block statically instead. */
 .ds-corporate .header-signin {
 	display: none !important;
 }
 
-/* The corporate layout.js animates menus open (jQuery slide); approximate
-   it whenever a panel is re-shown by the interaction shim. */
+.ds-corporate .header-visitor {
+	display: block !important;
+}
+
+/* The narrow-screen hamburger and search toggles need the corporate
+   layout.js; hide them rather than ship dead controls. */
+.ds-corporate .xsMenuToggle,
+.ds-corporate #xsHeader .search-icon {
+	display: none !important;
+}
+
+/* The corporate layout.js slides menus open (jQuery slideDown); approximate
+   the vertical settle whenever a panel is re-shown by the interaction shim.
+   margin-top is animated instead of transform so panel positioning is never
+   disturbed. */
 @keyframes ds-menu-open {
 	from {
 		opacity: 0;
-		transform: translateY(-8px);
+		margin-top: -12px;
+	}
+
+	to {
+		opacity: 1;
+		margin-top: 0;
 	}
 }
 
-.ds-corporate #subMenu,
-.ds-corporate [id$="SubMenu"] {
+.ds-corporate .headSubMenu {
 	animation: ds-menu-open 0.2s ease;
 }
 
@@ -62,8 +81,52 @@
 	display: none !important;
 }
 
+/* Defeat the --vp-layout-max-width centering: full-bleed banner with a
+   fixed 24px inset on both sides at every viewport width. */
+.VPNavBar .container {
+	max-width: 100% !important;
+}
+
 .VPNavBar.has-sidebar .content {
 	padding-left: 24px !important;
+	padding-right: 24px !important;
+}
+
+/* VitePress paints the banner background on the inner content-body and
+   insets its bottom divider by the sidebar width; extend both to the full
+   viewport width. */
+.VPNavBar,
+.VPNavBar .content-body {
+	background-color: var(--vp-nav-bg-color) !important;
+}
+
+/* Corporate grey header in dark mode: the vendored cascade paints the
+   desktop header white (#mdHeader{background:#fff}); flip the surface, the
+   logo, and the menu text (scoped rules carry no !important, so these win). */
+.dark .ds-corporate #mdHeader {
+	background: #323232 !important;
+}
+
+/* The wrapper can be a hair taller than #mdHeader's 72px; paint the whole
+   fixed header surface so no white sliver shows at its bottom edge. */
+.dark .ds-corporate-header {
+	background: #323232;
+}
+
+.dark .ds-corporate #overall-header .ds-logo {
+	background-image: url(https://www.dynamsoft.com/webres/wwwroot/images/dynamsoft-logos/logo-dynamsoft-white.svg) !important;
+}
+
+.dark .ds-corporate #mdMenu li a {
+	color: #fff !important;
+}
+
+.dark .ds-corporate .header-visitor a {
+	color: #ccc !important;
+}
+
+.VPNavBar .divider {
+	padding-left: 0 !important;
 }
 
 .VPNavBar .search,

@@ -2,6 +2,7 @@
 import VPTheme from "vitepress/theme";
 import { useData } from "vitepress";
 import Breadcrumbs from "./components/Breadcrumbs.vue";
+import Comm100Chat from "./components/Comm100Chat.vue";
 import CorporateFooter from "./components/CorporateFooter.vue";
 import CorporateHeader from "./components/CorporateHeader.vue";
 import VersionSwitcher from "./components/VersionSwitcher.vue";
@@ -22,6 +23,7 @@ const { theme } = useData();
 		</template>
 		<template #layout-bottom>
 			<CorporateFooter v-if="theme.dynamsoftChrome" />
+			<Comm100Chat v-if="theme.dynamsoftChrome" />
 		</template>
 	</VPTheme.Layout>
 </template>

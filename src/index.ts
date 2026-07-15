@@ -13,6 +13,8 @@ export interface DynamsoftThemeConfig extends DefaultTheme.Config {
 	dynamsoftChrome: boolean;
 	/** Breadcrumb labels per path directory, e.g. { api: "API Reference" }. */
 	breadcrumbLabels?: Record<string, string>;
+	/** Comm100 live-chat overrides; the fleet-wide site/plan is the default. */
+	comm100?: { siteId?: number; planId?: string };
 }
 
 const theme: Theme = {
