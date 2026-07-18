@@ -111,7 +111,10 @@ present in this package's `node_modules`, not just the consumer's.
 - `api/` is generated from TSDoc comments via typedoc +
   typedoc-plugin-markdown + typedoc-vitepress-theme; improve API docs by
   editing the TSDoc in the product source, not the output. `loadApiSidebar()`
-  reads the generated sidebar.
+  reads the generated sidebar. (File-structure sidebar derivation was
+  evaluated in July 2026 and rejected: VitePress has no built-in for it, and
+  a scanner — bespoke or the vitepress-sidebar package — costs more than
+  the few sidebar lines it replaces.)
 - GFM callouts (`> [!NOTE]` etc.) render GitHub-style out of the box.
 - The `ds-docs-npm-readme` bin renders a guide page npm-ready: it prints the
   page with site-relative links absolutized against the given production
