@@ -21,20 +21,37 @@ import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
+/** @typedef {{ label: string, path: string, branch?: string }} VersionEntry */
+
 const args = process.argv.slice(2);
+/**
+ * @param {string} name
+ * @param {string} fallback
+ * @returns {string}
+ */
 const opt = (name, fallback) => {
 	const i = args.indexOf(`--${name}`);
-	return i === -1 ? fallback : args[i + 1];
+	return (i === -1 ? undefined : args[i + 1]) ?? fallback;
 };
 
 const docsDir = process.cwd();
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+/**
+ * @param {string} cmd
+ * @param {string[]} argv
+ * @param {string} cwd
+ * @param {Record<string, string>} [env]
+ */
 const run = (cmd, argv, cwd, env) =>
 	execFileSync(cmd, argv, {
 		cwd,
 		stdio: "inherit",
 		env: env ? { ...process.env, ...env } : process.env,
 	});
+/**
+ * @param {string[]} argv
+ * @param {string} [cwd]
+ */
 const git = (argv, cwd = docsDir) => execFileSync("git", argv, { cwd, encoding: "utf8" }).trim();
 
 const repoRoot = git(["rev-parse", "--show-toplevel"]);
@@ -42,8 +59,12 @@ const docsRel = relative(repoRoot, docsDir);
 const manifestFile = resolve(docsDir, opt("manifest", "versions.json"));
 const outDir = resolve(docsDir, opt("out", join(repoRoot, "_site")));
 
+/** @type {{ versions?: VersionEntry[] }} */
 const manifest = JSON.parse(readFileSync(manifestFile, "utf8"));
-const tracked = (manifest.versions ?? []).filter((version) => version.branch);
+const tracked = (manifest.versions ?? []).filter(
+	/** @returns {version is VersionEntry & { branch: string }} */
+	(version) => Boolean(version.branch),
+);
 if (tracked.length === 0) {
 	console.error(`no branch-tracked versions in ${manifestFile}`);
 	process.exit(1);

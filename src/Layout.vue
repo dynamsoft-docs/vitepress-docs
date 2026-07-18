@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import VPTheme from "vitepress/theme";
+import VPTheme from "vitepress/theme-without-fonts";
 import { useData } from "vitepress";
 import Breadcrumbs from "./components/Breadcrumbs.vue";
 import Comm100Chat from "./components/Comm100Chat.vue";

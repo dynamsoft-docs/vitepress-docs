@@ -27,8 +27,9 @@
  *   5. :root/html/body selectors are rewritten to :scope,
  *   6. everything is wrapped in `@scope (.ds-corporate) { ... }`.
  *
- * Re-run periodically (or from CI) and commit the diff to pick up upstream
- * chrome changes.
+ * Maintainer-only (not shipped in the npm package), so it can be TypeScript:
+ * requires a Node version with type stripping (≥ 23.6; the fleet uses 24).
+ * Re-run periodically and commit the diff to pick up upstream chrome changes.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -43,13 +44,26 @@ const branch = process.env.DOCS_TEMPLATE_BRANCH ?? "main";
 const rawBase = `https://raw.githubusercontent.com/dynamsoft-docs/Docs-Template-Repo/${branch}/`;
 const webres = "https://www.dynamsoft.com/webres/wwwroot/";
 
-const htmlFiles = [
+interface HtmlFile {
+	src: string;
+	dest: string;
+}
+
+interface CssSource {
+	name: string;
+	/** Path inside Docs-Template-Repo, read via git show / GitHub raw. */
+	git?: string;
+	/** Absolute URL, fetched directly. */
+	url?: string;
+}
+
+const htmlFiles: HtmlFile[] = [
 	{ src: "_includes/page_header.html", dest: "page-header.html" },
 	{ src: "_includes/page_footer.html", dest: "page-footer.html" },
 ];
 
 // The complete stylesheet cascade head.html loads, in order.
-const cssSources = [
+const cssSources: CssSource[] = [
 	{ name: "dm-style", git: "assets/css/dm-style.min.css" },
 	{ name: "bootstrap", git: "assets/css/bootstrap.min.css" },
 	{ name: "font-awesome", git: "assets/css/font-awesome.min.css" },
@@ -59,7 +73,7 @@ const cssSources = [
 	{ name: "footer", url: `${webres}css/docs/footer.css` },
 ];
 
-async function readTemplateFile(src) {
+async function readTemplateFile(src: string): Promise<string> {
 	if (existsSync(resolve(localRepo, ".git"))) {
 		return execFileSync("git", ["-C", localRepo, "show", `${branch}:${src}`], {
 			encoding: "utf8",
@@ -69,13 +83,13 @@ async function readTemplateFile(src) {
 	return fetchText(rawBase + src);
 }
 
-async function fetchText(url) {
+async function fetchText(url: string): Promise<string> {
 	const res = await fetch(url);
 	if (!res.ok) throw new Error(`fetch ${url}: HTTP ${res.status}`);
 	return res.text();
 }
 
-const transformHtml = (html) =>
+const transformHtml = (html: string): string =>
 	html
 		// Same substitution the fleet's dev.sh applies at build time.
 		.replaceAll("assetsPath = '/webres/wwwroot'", `assetsPath = '${webres.slice(0, -1)}'`)
@@ -84,19 +98,19 @@ const transformHtml = (html) =>
 		.replaceAll("{{ 'now' | date: '%Y' }}", "%%YEAR%%");
 
 /** Make every relative url() absolute against the stylesheet's own URL. */
-const absolutizeUrls = (css, sourceUrl) =>
+const absolutizeUrls = (css: string, sourceUrl: string): string =>
 	css.replace(/url\(\s*(['"]?)([^'")]+)\1\s*\)/g, (match, quote, target) => {
 		if (/^(data:|https?:|\/\/|#)/i.test(target)) return match;
 		return `url(${quote}${new URL(target, sourceUrl).href}${quote})`;
 	});
 
 /** The fleet sizes rem against html{font-size:10px}; bake that in as px. */
-const remToPx = (css) =>
+const remToPx = (css: string): string =>
 	css.replace(/([\d.]+)rem\b/g, (_, n) => `${Math.round(Number.parseFloat(n) * 100) * 0.1}px`);
 
 /** @font-face must stay top-level; @scope would silently drop it. */
-function hoistFontFaces(css) {
-	const fontFaces = [];
+function hoistFontFaces(css: string): { fontFaces: string[]; rest: string } {
+	const fontFaces: string[] = [];
 	const rest = css.replace(/@font-face\s*\{[^{}]*\}/g, (block) => {
 		fontFaces.push(block);
 		return "";
@@ -104,7 +118,7 @@ function hoistFontFaces(css) {
 	return { fontFaces, rest };
 }
 
-const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const rawFontUrl = new RegExp(
 	`url\\((['"]?)${escapeRegex(`${rawBase}assets/font-face/`)}([^'")]+)\\1\\)`,
 	"g",
@@ -116,12 +130,12 @@ const rawFontUrl = new RegExp(
  * fallback: the fleet ships font-display:optional, which skips the font for
  * the entire visit whenever it is not ready within ~100ms of first paint.
  */
-async function retargetFontFaces(blocks) {
-	const files = new Set();
+async function retargetFontFaces(blocks: string[]): Promise<string[]> {
+	const files = new Set<string>();
 	for (const block of blocks) {
 		for (const match of block.matchAll(rawFontUrl)) files.add(match[2].split(/[?#]/)[0]);
 	}
-	const onWebres = new Map();
+	const onWebres = new Map<string, boolean>();
 	for (const file of files) {
 		// Missing files redirect to an HTML error page, so exclude only that;
 		// webres serves ttf/svg fonts as octet-stream/svg+xml.
@@ -146,14 +160,14 @@ async function retargetFontFaces(blocks) {
  * while the font is loading — or if it fails — the browser falls back to
  * the UA default, a serif. Append a sans-serif stack.
  */
-const addFontFallbacks = (css) =>
+const addFontFallbacks = (css: string): string =>
 	css.replace(
 		/font-family\s*:\s*((["']?)(?:OpenSans|Oswald)-[A-Za-z]+\2)(?=\s*[;}!])/g,
 		(_, family) => `font-family:${family},Helvetica,Arial,sans-serif`,
 	);
 
 /** :root/html/body can never match inside @scope; retarget the scope root. */
-const rescopeRootSelectors = (css) =>
+const rescopeRootSelectors = (css: string): string =>
 	css.replace(/(^|[{},])\s*(:root|html|body)(?![\w-])/g, "$1:scope");
 
 mkdirSync(outDir, { recursive: true });
@@ -164,11 +178,11 @@ for (const file of htmlFiles) {
 	console.log(`synced ${file.src} -> ${file.dest} (${html.length} bytes)`);
 }
 
-const fontSections = [];
-const scopedSections = [];
+const fontSections: { name: string; fontFaces: string[] }[] = [];
+const scopedSections: string[] = [];
 for (const source of cssSources) {
-	const raw = source.git ? await readTemplateFile(source.git) : await fetchText(source.url);
-	const sourceUrl = source.git ? rawBase + source.git : source.url;
+	const raw = source.git ? await readTemplateFile(source.git) : await fetchText(source.url ?? "");
+	const sourceUrl = source.git ? rawBase + source.git : (source.url ?? "");
 	const css = remToPx(absolutizeUrls(raw.replace(/@charset[^;]+;/g, ""), sourceUrl));
 	const { fontFaces, rest } = hoistFontFaces(css);
 	if (fontFaces.length) fontSections.push({ name: source.name, fontFaces });
@@ -178,11 +192,11 @@ for (const source of cssSources) {
 	console.log(`synced css ${source.name} (${raw.length} bytes)`);
 }
 
-const fontCss = [];
+const fontCss: string[] = [];
 for (const section of fontSections) {
 	fontCss.push(`/* ${section.name} */\n${(await retargetFontFaces(section.fontFaces)).join("\n")}`);
 }
 
-const chromeCss = `/* GENERATED by scripts/sync-chrome.mjs — do not edit by hand. */\n\n${fontCss.join("\n\n")}\n\n${scopedSections.join("\n\n")}\n`;
+const chromeCss = `/* GENERATED by scripts/sync-chrome.mts — do not edit by hand. */\n\n${fontCss.join("\n\n")}\n\n${scopedSections.join("\n\n")}\n`;
 writeFileSync(resolve(outDir, "chrome.css"), chromeCss);
 console.log(`wrote chrome.css (${chromeCss.length} bytes)`);

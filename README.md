@@ -6,7 +6,7 @@ default VitePress theme with:
 - **Corporate header/footer** — the real markup from
   [Docs-Template-Repo](https://github.com/dynamsoft-docs/Docs-Template-Repo)
   plus the fleet's full stylesheet cascade, vendored by
-  `scripts/sync-chrome.mjs`. The sync transforms make the cascade safe inside
+  `scripts/sync-chrome.mts`. The sync transforms make the cascade safe inside
   a VitePress page: url() absolutization (template assets resolve to GitHub
   raw), rem→px against the fleet's 10px root, @font-face hoisting (font URLs
   retargeted to the shared webres copies — GitHub raw's max-age=300 plus the
@@ -40,7 +40,12 @@ default VitePress theme with:
   overridden by the site config it wraps.
 
 The package ships TypeScript/Vue source (no build step); the consuming
-site's VitePress compiles it.
+site's VitePress compiles it. Two shipped files must stay JavaScript —
+`src/config.js` (loaded by Node when VitePress bundles the site config) and
+`scripts/build-versions.mjs` (a bin) — because Node refuses to type-strip
+TypeScript inside `node_modules`; both are fully typed via JSDoc +
+`config.d.ts` and type-checked with `checkJs`. The maintainer-only
+`scripts/sync-chrome.mts` is TypeScript (run it with Node ≥ 23.6).
 
 ## Setting up a docs site
 

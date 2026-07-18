@@ -18,7 +18,7 @@
 		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"sync-chrome": "node scripts/sync-chrome.mjs",
+		"sync-chrome": "node scripts/sync-chrome.mts",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"lint": "vp lint",
 		"fmt": "vp fmt",
@@ -28,6 +28,7 @@
 		"markdown-it-github-alerts": "^1.0.1"
 	},
 	"devDependencies": {
+		"@types/node": "^24.0.0",
 		"typescript": "^5.8.0",
 		"vite-plus": "0.2.4",
 		"vitepress": "2.0.0-alpha.18",

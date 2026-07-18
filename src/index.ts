@@ -1,6 +1,7 @@
 import type { Theme } from "vitepress";
 import type { DefaultTheme } from "vitepress";
-import VPTheme from "vitepress/theme";
+// Use corporate fonts
+import VPTheme from "vitepress/theme-without-fonts";
 import Layout from "./Layout.vue";
 // GFM alert styles for the markup produced by markdown-it-github-alerts,
 // which `defineDynamsoftConfig` (the ./config export) wires into markdown-it.
@@ -23,9 +24,7 @@ export interface DynamsoftThemeConfig extends DefaultTheme.Config {
 	comm100?: { siteId?: number; planId?: string };
 }
 
-const theme: Theme = {
+export default {
 	extends: VPTheme,
 	Layout,
-};
-
-export default theme;
+} satisfies Theme;

@@ -9,18 +9,27 @@ import MarkdownItGitHubAlerts from "markdown-it-github-alerts";
 
 const themeRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-/** The committed version manifest (docs/versions.json); public/ stays generated. */
-const manifestPath = () => resolve(process.cwd(), "versions.json");
+/**
+ * The committed version manifest (versions.json in the site root); the
+ * served copy is generated (dev middleware / buildEnd / build-versions bin).
+ * @param {string} root
+ */
+const manifestIn = (root) => resolve(root, "versions.json");
 
-/** Serve the manifest at <base>versions.json during dev (the version
- *  switcher fetches it from the docs root). Builds get it via buildEnd. */
+/**
+ * Serve the manifest at <base>versions.json during dev (the version
+ * switcher fetches it from the docs root). Builds get it via buildEnd.
+ * @param {string} base
+ * @returns {import("vite").Plugin}
+ */
 const versionManifestPlugin = (base) => ({
 	name: "ds-version-manifest",
 	configureServer(server) {
 		server.middlewares.use((req, res, next) => {
-			if (req.url?.split("?")[0] === `${base}versions.json` && existsSync(manifestPath())) {
+			const manifest = manifestIn(server.config.root);
+			if (req.url?.split("?")[0] === `${base}versions.json` && existsSync(manifest)) {
 				res.setHeader("Content-Type", "application/json");
-				res.end(readFileSync(manifestPath()));
+				res.end(readFileSync(manifest));
 			} else {
 				next();
 			}
@@ -52,6 +61,8 @@ const versionManifestPlugin = (base) => ({
  *   must be bundled, not externalized, when installed from a registry.
  * - Search defaults to the offline local index (the fleet's VitePress sites
  *   do not use Algolia).
+ * - A sitemap is generated for www.dynamsoft.com and the corporate favicon
+ *   is set; a site-provided `sitemap` wins, site `head` entries append.
  *
  * @param {import("vitepress").UserConfig<import("./index.js").DynamsoftThemeConfig>} config
  * @returns {import("vitepress").UserConfig<import("./index.js").DynamsoftThemeConfig>}
@@ -64,13 +75,21 @@ export function defineDynamsoftConfig(config) {
 	const siteNoExternal = config.vite?.ssr?.noExternal;
 	return {
 		lastUpdated: true,
+		// The sitemap hostname must carry the base path; versioned copies are
+		// left out of search indexes, like the fleet's Jekyll sitemaps.
+		...(version ? {} : { sitemap: { hostname: new URL(base, "https://www.dynamsoft.com").href } }),
 		...config,
 		base,
+		head: [
+			["link", { rel: "icon", href: "https://www.dynamsoft.com/favicon.ico" }],
+			...(config.head ?? []),
+		],
 		async buildEnd(siteConfig) {
 			// Publish the committed manifest into the built site so the version
 			// switcher (which fetches <docsRoot>versions.json) finds it.
-			if (existsSync(manifestPath())) {
-				cpSync(manifestPath(), join(siteConfig.outDir, "versions.json"));
+			const manifest = manifestIn(siteConfig.root);
+			if (existsSync(manifest)) {
+				cpSync(manifest, join(siteConfig.outDir, "versions.json"));
 			}
 			await config.buildEnd?.(siteConfig);
 		},
