@@ -12,10 +12,14 @@ const crumbs = computed(() => {
 		.replace(/[^/]*$/, "")
 		.split("/")
 		.filter(Boolean);
-	return dirs.map((dir, i) => ({
+	const list = dirs.map((dir, i) => ({
 		text: labels[dir] ?? dir.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
 		link: withBase(`/${dirs.slice(0, i + 1).join("/")}/`),
 	}));
+	// An index page often titles itself like its directory (e.g.
+	// introduction/index.md titled "Introduction") — drop the redundant crumb.
+	if (list.length > 0 && list[list.length - 1].text === page.value.title) list.pop();
+	return list;
 });
 </script>
 

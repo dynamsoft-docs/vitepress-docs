@@ -123,10 +123,18 @@ present in this package's `node_modules`, not just the consumer's.
   It is dependency-free, so it can also be run with plain `node` straight
   from a checkout of this repo.
 - A docs `README.md` is excluded from the site (it documents the docs setup).
-- Optional single-sourcing pattern: a guide page can include the repository
-  README via VitePress markdown inclusion with `<!-- #region ... -->`
-  markers. Includes fail **silently** — if the page renders empty, check the
-  markers still exist.
+- Prose links into the API reference are handwritten and site-relative
+  (`/api/…#anchor`, pointing at the typedoc-generated pages) so they stay
+  correct inside versioned builds. VitePress fails the build on dead pages
+  but does **not** check `#anchors`; no existing tool generates or validates
+  such links from symbol names (evaluated July 2026 — bespoke tooling
+  rejected). If anchor rot ever becomes a problem, `lychee
+  --include-fragments` is an existing checker for markdown heading anchors.
+- Single-sourcing pattern: a docs page can include a repository file via
+  VitePress markdown inclusion, whole (e.g. a changelog page including the
+  root `CHANGELOG.md`) or partially with `<!-- #region ... -->` markers.
+  Includes fail **silently** — if the page renders empty, check the included
+  file and markers still exist.
 
 ## Versioning model (branch-tracked, manifest-driven)
 
@@ -162,6 +170,24 @@ current checkout** at the docs root — other versions' subpaths exist only in
 an assembled tree, so the switcher's other entries 404 in dev. To check
 versions locally, run `npm run build:versions` and serve `_site` under the
 `docsRoot` prefix.
+
+## Deployment (fleet convention)
+
+Docs sites deploy as static trees FTP-synced to the IIS server behind
+www.dynamsoft.com. The conventional GitHub workflow (see mds-js's
+`.github/workflows/docs.yml` for a working example):
+
+- Push/PR runs build only the current checkout and upload the site as an
+  artifact for verification — no deployment.
+- Manual runs (`workflow_dispatch`) build every version designated in
+  `versions.json` via `ds-docs-build-versions` and FTP-sync the assembled
+  tree to the site's `docsRoot` — production, or the demo3 test site behind
+  a "beta" input (separate FTP secrets pair).
+- The FTP action's sync state only manages files it uploaded itself:
+  pre-existing server content (e.g. frozen Jekyll-era version copies) is
+  left untouched. Anything the site must own on the server — IIS
+  `web.config` redirects, for instance — should ship from the docs
+  package's `public/` directory so it deploys (and versions) with the site.
 
 ## Updating the corporate chrome
 
