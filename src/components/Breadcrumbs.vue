@@ -8,7 +8,10 @@ const { page, frontmatter, theme } = useData();
 // themeConfig.breadcrumbLabels); the page title is the final, unlinked crumb.
 const crumbs = computed(() => {
 	const labels: Record<string, string> = theme.value.breadcrumbLabels ?? {};
-	const dirs = page.value.relativePath.replace(/[^/]*$/, "").split("/").filter(Boolean);
+	const dirs = page.value.relativePath
+		.replace(/[^/]*$/, "")
+		.split("/")
+		.filter(Boolean);
 	return dirs.map((dir, i) => ({
 		text: labels[dir] ?? dir.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
 		link: withBase(`/${dirs.slice(0, i + 1).join("/")}/`),

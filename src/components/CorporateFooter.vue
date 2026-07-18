@@ -3,9 +3,7 @@ import { computed } from "vue";
 import footerHtml from "../chrome/page-footer.html?raw";
 import "../chrome/chrome.css";
 
-const footer = computed(() =>
-	footerHtml.replaceAll("%%YEAR%%", String(new Date().getFullYear())),
-);
+const footer = computed(() => footerHtml.replaceAll("%%YEAR%%", String(new Date().getFullYear())));
 </script>
 
 <template>

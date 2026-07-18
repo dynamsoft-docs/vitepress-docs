@@ -23,10 +23,7 @@ function setPanel(id: string | null) {
 		const open = panelId === id;
 		const panel = host.value?.querySelector<HTMLElement>(`#${panelId}`);
 		if (panel) panel.style.display = open ? "block" : "none";
-		host.value
-			?.querySelector(`.${toggleClass}`)
-			?.closest("li")
-			?.classList.toggle("on", open);
+		host.value?.querySelector(`.${toggleClass}`)?.closest("li")?.classList.toggle("on", open);
 	}
 }
 
