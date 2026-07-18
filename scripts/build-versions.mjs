@@ -12,7 +12,7 @@
  * only on the server).
  *
  * Worktrees are created as siblings of the repository root so relative
- * file: dependencies (e.g. ../../dynamsoft-vitepress-theme) resolve the
+ * file: dependencies (e.g. ../../vitepress-docs) resolve the
  * same way they do in the primary checkout.
  *
  * Usage: ds-docs-build-versions [--manifest versions.json] [--out <repo>/_site]

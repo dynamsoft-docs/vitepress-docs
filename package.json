@@ -1,7 +1,7 @@
 {
-	"name": "dynamsoft-vitepress-theme",
+	"name": "@dynamsoft/vitepress-docs",
 	"version": "0.1.0",
-	"description": "Shared Dynamsoft VitePress theme: corporate header/footer chrome, docs version switcher, and brand styles.",
+	"description": "Dynamsoft docs-site toolkit for VitePress: corporate chrome theme, version switcher and multi-version builds, config factory, and docs bins.",
 	"bin": {
 		"ds-docs-build-versions": "./scripts/build-versions.mjs",
 		"ds-docs-npm-readme": "./scripts/npm-readme.mjs"

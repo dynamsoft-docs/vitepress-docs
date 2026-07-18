@@ -1,4 +1,4 @@
-# dynamsoft-vitepress-theme
+# @dynamsoft/vitepress-docs
 
 Shared VitePress theme for Dynamsoft product documentation sites. Extends the
 default VitePress theme with:
@@ -60,20 +60,20 @@ inside `node_modules`; all of them are fully typed via JSDoc (+
 		"build:versions": "ds-docs-build-versions",
 	},
 	"devDependencies": {
-		"dynamsoft-vitepress-theme": "<version>", // or file:../../dynamsoft-vitepress-theme while unpublished
+		"@dynamsoft/vitepress-docs": "<version>", // or file:../../vitepress-docs while unpublished
 	},
 }
 ```
 
 ```ts
 // docs/.vitepress/theme/index.ts
-import DynamsoftTheme from "dynamsoft-vitepress-theme";
+import DynamsoftTheme from "@dynamsoft/vitepress-docs";
 export default DynamsoftTheme;
 ```
 
 ```ts
 // docs/.vitepress/config.mts
-import { defineDynamsoftConfig, loadApiSidebar } from "dynamsoft-vitepress-theme/config";
+import { defineDynamsoftConfig, loadApiSidebar } from "@dynamsoft/vitepress-docs/config";
 
 export default defineDynamsoftConfig({
 	title: "Your Product",
@@ -186,8 +186,10 @@ www.dynamsoft.com. The conventional GitHub workflow (see mds-js's
 - The FTP action's sync state only manages files it uploaded itself:
   pre-existing server content (e.g. frozen Jekyll-era version copies) is
   left untouched. Anything the site must own on the server — IIS
-  `web.config` redirects, for instance — should ship from the docs
-  package's `public/` directory so it deploys (and versions) with the site.
+  `web.config` redirects, for instance — lives at the docs package root
+  (`<docs>/web.config`), which the config factory copies into the built
+  site at `buildEnd`, like the version manifest. `public/` is untracked
+  scratch space by fleet convention, so deploy files never live there.
 
 ## Updating the corporate chrome
 

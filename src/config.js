@@ -86,10 +86,13 @@ export function defineDynamsoftConfig(config) {
 		],
 		async buildEnd(siteConfig) {
 			// Publish the committed manifest into the built site so the version
-			// switcher (which fetches <docsRoot>versions.json) finds it.
-			const manifest = manifestIn(siteConfig.root);
-			if (existsSync(manifest)) {
-				cpSync(manifest, join(siteConfig.outDir, "versions.json"));
+			// switcher (which fetches <docsRoot>versions.json) finds it. The
+			// site's server config (IIS web.config) ships the same way: deploy
+			// files live at the docs package root — public/ is conventionally
+			// untracked scratch space in the fleet.
+			for (const file of ["versions.json", "web.config"]) {
+				const src = resolve(siteConfig.root, file);
+				if (existsSync(src)) cpSync(src, join(siteConfig.outDir, file));
 			}
 			await config.buildEnd?.(siteConfig);
 		},
@@ -133,7 +136,7 @@ export function defineDynamsoftConfig(config) {
 				// Linked (file:) installs are excluded automatically; registry
 				// installs need it explicit.
 				exclude: [
-					...new Set(["dynamsoft-vitepress-theme", ...(config.vite?.optimizeDeps?.exclude ?? [])]),
+					...new Set(["@dynamsoft/vitepress-docs", ...(config.vite?.optimizeDeps?.exclude ?? [])]),
 				],
 			},
 			ssr: {
@@ -142,7 +145,7 @@ export function defineDynamsoftConfig(config) {
 					siteNoExternal === true
 						? true
 						: [
-								"dynamsoft-vitepress-theme",
+								"@dynamsoft/vitepress-docs",
 								...(Array.isArray(siteNoExternal)
 									? siteNoExternal
 									: siteNoExternal
