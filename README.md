@@ -40,11 +40,11 @@ default VitePress theme with:
   overridden by the site config it wraps.
 
 The package ships TypeScript/Vue source (no build step); the consuming
-site's VitePress compiles it. Two shipped files must stay JavaScript —
+site's VitePress compiles it. A few shipped files must stay JavaScript —
 `src/config.js` (loaded by Node when VitePress bundles the site config) and
-`scripts/build-versions.mjs` (a bin) — because Node refuses to type-strip
-TypeScript inside `node_modules`; both are fully typed via JSDoc +
-`config.d.ts` and type-checked with `checkJs`. The maintainer-only
+the `scripts/*.mjs` bins — because Node refuses to type-strip TypeScript
+inside `node_modules`; all of them are fully typed via JSDoc (+
+`config.d.ts`) and type-checked with `checkJs`. The maintainer-only
 `scripts/sync-chrome.mts` is TypeScript (run it with Node ≥ 23.6).
 
 ## Setting up a docs site
@@ -113,6 +113,15 @@ present in this package's `node_modules`, not just the consumer's.
   editing the TSDoc in the product source, not the output. `loadApiSidebar()`
   reads the generated sidebar.
 - GFM callouts (`> [!NOTE]` etc.) render GitHub-style out of the box.
+- The `ds-docs-npm-readme` bin renders a guide page npm-ready: it prints the
+  page with site-relative links absolutized against the given production
+  site root (`.md` paths mapped to the published `.html` pages) and GFM
+  alert markers downgraded to plain `> **Note**` blockquotes — npm renders
+  neither. Product repos whose npm package should carry the full guide run
+  it in their publish workflow just before `npm pack`:
+  `ds-docs-npm-readme guide/index.md --site https://…/docs/web/ > README.md`.
+  It is dependency-free, so it can also be run with plain `node` straight
+  from a checkout of this repo.
 - A docs `README.md` is excluded from the site (it documents the docs setup).
 - Optional single-sourcing pattern: a guide page can include the repository
   README via VitePress markdown inclusion with `<!-- #region ... -->`

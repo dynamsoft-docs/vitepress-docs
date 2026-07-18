@@ -3,7 +3,8 @@
 	"version": "0.1.0",
 	"description": "Shared Dynamsoft VitePress theme: corporate header/footer chrome, docs version switcher, and brand styles.",
 	"bin": {
-		"ds-docs-build-versions": "./scripts/build-versions.mjs"
+		"ds-docs-build-versions": "./scripts/build-versions.mjs",
+		"ds-docs-npm-readme": "./scripts/npm-readme.mjs"
 	},
 	"files": [
 		"src",
