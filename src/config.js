@@ -1,8 +1,9 @@
 // Node-side config entry: loaded by VitePress's config bundler, so it must
 // stay plain JavaScript (Node does not type-strip inside node_modules) and
 // must not import the client theme entry (.vue/.css). Types in config.d.ts.
-import { cpSync, existsSync, readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { execFileSync } from "node:child_process";
+import { cpSync, existsSync, readFileSync, statSync } from "node:fs";
+import { dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { searchForWorkspaceRoot } from "vite";
 import MarkdownItGitHubAlerts from "markdown-it-github-alerts";
@@ -16,23 +17,103 @@ const themeRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
  */
 const manifestIn = (root) => resolve(root, "versions.json");
 
+/** Content types for serving the assembled version tree in dev. */
+const MIME = /** @type {Record<string, string>} */ ({
+	".html": "text/html",
+	".js": "text/javascript",
+	".css": "text/css",
+	".json": "application/json",
+	".svg": "image/svg+xml",
+	".png": "image/png",
+	".jpg": "image/jpeg",
+	".webp": "image/webp",
+	".ico": "image/x-icon",
+	".woff": "font/woff",
+	".woff2": "font/woff2",
+	".ttf": "font/ttf",
+	".xml": "application/xml",
+	".txt": "text/plain",
+});
+
 /**
- * Serve the manifest at <base>versions.json during dev (the version
- * switcher fetches it from the docs root). Builds get it via buildEnd.
- * @param {string} base
+ * Dev-server support for the versioning model:
+ * - serves the manifest at <docsRoot>versions.json (the version switcher
+ *   fetches it from the docs root; builds get it via buildEnd instead);
+ * - serves other versions' subpaths from the assembled tree that
+ *   `ds-docs-build-versions` leaves at <repo>/_site, so the switcher works
+ *   in dev — latest stays live, frozen versions are static. Versions not
+ *   built yet get a 404 explaining how to build them.
+ * @param {string} base current base (the live site)
+ * @param {string} docsRoot root of the deployed docs (versioned bases hang off it)
  * @returns {import("vite").Plugin}
  */
-const versionManifestPlugin = (base) => ({
-	name: "ds-version-manifest",
+const versionsPlugin = (base, docsRoot) => ({
+	name: "ds-versions",
 	configureServer(server) {
-		server.middlewares.use((req, res, next) => {
-			const manifest = manifestIn(server.config.root);
-			if (req.url?.split("?")[0] === `${base}versions.json` && existsSync(manifest)) {
-				res.setHeader("Content-Type", "application/json");
-				res.end(readFileSync(manifest));
-			} else {
-				next();
+		const root = server.config.root;
+		/** `ds-docs-build-versions` assembles into the repository root. */
+		const siteTree = (() => {
+			try {
+				return join(
+					execFileSync("git", ["rev-parse", "--show-toplevel"], {
+						cwd: root,
+						encoding: "utf8",
+					}).trim(),
+					"_site",
+				);
+			} catch {
+				return resolve(root, "../_site");
 			}
+		})();
+
+		server.middlewares.use((req, res, next) => {
+			const url = req.url?.split("?")[0] ?? "";
+			const manifest = manifestIn(root);
+			if (!existsSync(manifest)) return next();
+
+			if (url === `${base}versions.json`) {
+				res.setHeader("Content-Type", "application/json");
+				return res.end(readFileSync(manifest));
+			}
+
+			// A versioned subpath other than the live site?
+			/** @type {{ versions?: { path: string }[] }} */
+			const { versions = [] } = JSON.parse(readFileSync(manifest, "utf8"));
+			const hit = versions.find(
+				(v) => v.path && `${docsRoot}${v.path}` !== base && url.startsWith(`${docsRoot}${v.path}`),
+			);
+			if (!hit) {
+				// Live-site probe from the version switcher: the dev server
+				// answers 200 for any path (SPA fallback), so probes carry a
+				// header and are answered from the page sources instead.
+				// Static versions and production give real statuses anyway.
+				if (req.method === "HEAD" && req.headers["x-ds-probe"] && url.startsWith(base)) {
+					const rest = decodeURIComponent(url.slice(base.length));
+					const page =
+						rest === "" || rest.endsWith("/") ? `${rest}index.md` : rest.replace(/\.html$/, ".md");
+					const ok =
+						existsSync(join(root, page)) ||
+						existsSync(join(root, rest)) ||
+						existsSync(join(root, "public", rest));
+					res.statusCode = ok ? 200 : 404;
+					return res.end();
+				}
+				return next();
+			}
+
+			let file = resolve(siteTree, url.slice(docsRoot.length));
+			if (!file.startsWith(siteTree + sep)) return next();
+			if (existsSync(file) && statSync(file).isDirectory()) file = join(file, "index.html");
+			if (!existsSync(file)) {
+				res.statusCode = 404;
+				res.setHeader("Content-Type", "text/plain");
+				return res.end(
+					`${url} is not in the assembled version tree (${siteTree}).\n` +
+						"Run `npm run build:versions` to build the versions designated in versions.json.\n",
+				);
+			}
+			res.setHeader("Content-Type", MIME[extname(file)] ?? "application/octet-stream");
+			return res.end(readFileSync(file));
 		});
 	},
 });
@@ -114,7 +195,7 @@ export function defineDynamsoftConfig(config) {
 		},
 		vite: {
 			...config.vite,
-			plugins: [...(config.vite?.plugins ?? []), versionManifestPlugin(base)],
+			plugins: [...(config.vite?.plugins ?? []), versionsPlugin(base, docsRoot)],
 			server: {
 				...config.vite?.server,
 				fs: {

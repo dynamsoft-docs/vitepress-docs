@@ -29,9 +29,24 @@ onMounted(async () => {
 	}
 });
 
-function go(event: Event) {
+async function go(event: Event) {
 	const path = (event.target as HTMLSelectElement).value;
-	location.href = theme.value.docsRoot + path;
+	const root: string = theme.value.docsRoot;
+	// Try the same page in the target version (server-side redirects count:
+	// fetch follows them, and the browser will follow the same one). Fall
+	// back to the version root when the page has no counterpart. Caveat:
+	// the dev server answers 200 for any live-site path (SPA fallback), so
+	// the probe is only meaningful against static versions and production.
+	const samePage = location.pathname.slice((root + current.value).length) + location.hash;
+	const candidate = root + path + samePage;
+	try {
+		// The header lets the dev server answer from the page sources instead
+		// of its 200-for-everything SPA fallback; production ignores it.
+		const probe = await fetch(candidate, { method: "HEAD", headers: { "x-ds-probe": "1" } });
+		location.href = probe.ok ? candidate : root + path;
+	} catch {
+		location.href = root + path;
+	}
 }
 </script>
 

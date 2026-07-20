@@ -168,11 +168,12 @@ deploy as a whole. `defineDynamsoftConfig` serves the manifest at
 `<base>versions.json` in dev and copies it into single builds via
 `buildEnd`.
 
-Note that `npm run dev` (and a plain `npm run build`) serves **only the
-current checkout** at the docs root — other versions' subpaths exist only in
-an assembled tree, so the switcher's other entries 404 in dev. To check
-versions locally, run `npm run build:versions` and serve `_site` under the
-`docsRoot` prefix.
+`npm run dev` serves the **current checkout live** at the docs root and the
+**other versions statically** from the assembled tree at `<repo>/_site`, so
+the version switcher works in dev — run `npm run build:versions` once to
+assemble it (a version that has not been assembled yet answers with a 404
+explaining exactly that). A plain `npm run build` still builds only the
+current checkout.
 
 ## Deployment (fleet convention)
 
