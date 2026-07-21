@@ -91,10 +91,14 @@ const versionsPlugin = (base, docsRoot) => ({
 					const rest = decodeURIComponent(url.slice(base.length));
 					const page =
 						rest === "" || rest.endsWith("/") ? `${rest}index.md` : rest.replace(/\.html$/, ".md");
+					// Raw paths must be files: a bare directory without an index
+					// page would 404 on the static servers this probe stands in
+					// for, so a directory hit here would be a false positive.
+					const isFile = (/** @type {string} */ p) => existsSync(p) && statSync(p).isFile();
 					const ok =
 						existsSync(join(root, page)) ||
-						existsSync(join(root, rest)) ||
-						existsSync(join(root, "public", rest));
+						isFile(join(root, rest)) ||
+						isFile(join(root, "public", rest));
 					res.statusCode = ok ? 200 : 404;
 					return res.end();
 				}

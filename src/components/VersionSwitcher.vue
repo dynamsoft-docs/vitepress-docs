@@ -33,20 +33,34 @@ async function go(event: Event) {
 	const path = (event.target as HTMLSelectElement).value;
 	const root: string = theme.value.docsRoot;
 	// Try the same page in the target version (server-side redirects count:
-	// fetch follows them, and the browser will follow the same one). Fall
-	// back to the version root when the page has no counterpart. Caveat:
-	// the dev server answers 200 for any live-site path (SPA fallback), so
-	// the probe is only meaningful against static versions and production.
-	const samePage = location.pathname.slice((root + current.value).length) + location.hash;
-	const candidate = root + path + samePage;
-	try {
-		// The header lets the dev server answer from the page sources instead
-		// of its 200-for-everything SPA fallback; production ignores it.
-		const probe = await fetch(candidate, { method: "HEAD", headers: { "x-ds-probe": "1" } });
-		location.href = probe.ok ? candidate : root + path;
-	} catch {
-		location.href = root + path;
+	// fetch follows them, and the browser will follow the same one), then
+	// walk up its ancestor directories, so a page without a counterpart
+	// lands on the closest section shared by both versions; the version
+	// root is the last resort. Caveat: the dev server answers 200 for any
+	// live-site path (SPA fallback), so probes are only meaningful against
+	// static versions and production — the header below lets it answer from
+	// the page sources instead; production ignores it.
+	const samePage = location.pathname.slice((root + current.value).length);
+	const candidates = [samePage + location.hash];
+	for (let dir = samePage.replace(/[^/]*$/, ""); dir; dir = dir.replace(/[^/]*\/$/, "")) {
+		if (dir !== samePage) candidates.push(dir);
 	}
+	for (const candidate of candidates) {
+		try {
+			const probe = await fetch(root + path + candidate, {
+				method: "HEAD",
+				headers: { "x-ds-probe": "1" },
+			});
+			if (probe.ok) {
+				location.href = root + path + candidate;
+				return;
+			}
+		} catch {
+			// Network trouble: further probes would fail the same way.
+			break;
+		}
+	}
+	location.href = root + path;
 }
 </script>
 
