@@ -135,7 +135,9 @@ const versionsPlugin = (base, docsRoot) => ({
  * - `README.md` inside the docs dir is excluded from the site (it documents
  *   the docs setup itself).
  * - The dev server may read this theme's checkout (file:-linked installs
- *   resolve imports from the real path, outside the site root).
+ *   resolve imports from the real path, outside the site root) and binds
+ *   all interfaces (fleet docs dev happens in containers behind proxied
+ *   interfaces).
  * - vue/vitepress are deduped and the theme is added to `ssr.noExternal`:
  *   the theme ships TypeScript/Vue source, so its peer imports must resolve
  *   to the site's single instances (vital for file:/linked installs) and it
@@ -197,6 +199,9 @@ export function defineDynamsoftConfig(config) {
 			...config.vite,
 			plugins: [...(config.vite?.plugins ?? []), versionsPlugin(base, docsRoot)],
 			server: {
+				// Fleet docs dev runs in containers behind proxied interfaces;
+				// bind all interfaces by default. A site-provided host wins.
+				host: true,
 				...config.vite?.server,
 				fs: {
 					...config.vite?.server?.fs,

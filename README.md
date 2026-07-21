@@ -90,6 +90,33 @@ export default defineDynamsoftConfig({
 });
 ```
 
+```jsonc
+// docs/tsconfig.json — typechecking for the config/theme files
+{
+	"extends": "@dynamsoft/vitepress-docs/tsconfig.base.json",
+	"include": ["env.d.ts", ".vitepress/**/*.ts", ".vitepress/**/*.mts", ".vitepress/**/*.vue"],
+}
+```
+
+```jsonc
+// docs/typedoc.json — API reference generation
+{
+	"$schema": "https://typedoc.org/schema.json",
+	// Fleet conventions: markdown + vitepress plugins, out: "api" wiped per
+	// run, no README page, private/internal excluded. Path-type options
+	// (out, docsRoot, basePath, tsconfig, entryPoints) resolve relative to
+	// the file DECLARING them — typedoc resolves an extended config's paths
+	// against its own location inside node_modules — so they must stay here.
+	"extends": ["@dynamsoft/vitepress-docs/typedoc.base.json"],
+	"name": "Your Product API Reference",
+	"entryPoints": ["../src/index.ts"],
+	"tsconfig": "../tsconfig.json",
+	"out": "api",
+	"docsRoot": ".",
+	"basePath": "..",
+}
+```
+
 Install with `npm install` in the docs package (and in the repo root — the
 API reference is generated from the product's TypeScript source, which
 resolves types from the root `node_modules`). While this theme is consumed

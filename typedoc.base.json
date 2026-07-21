@@ -1,0 +1,9 @@
+{
+	"$schema": "https://typedoc.org/schema.json",
+	"plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+	"cleanOutputDir": true,
+	"readme": "none",
+	"excludePrivate": true,
+	"excludeInternal": true,
+	"githubPages": false
+}

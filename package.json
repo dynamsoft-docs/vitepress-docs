@@ -8,6 +8,8 @@
 	},
 	"files": [
 		"src",
+		"tsconfig.base.json",
+		"typedoc.base.json",
 		"README.md"
 	],
 	"type": "module",
@@ -16,6 +18,8 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./config": "./src/config.js",
+		"./tsconfig.base.json": "./tsconfig.base.json",
+		"./typedoc.base.json": "./typedoc.base.json",
 		"./package.json": "./package.json"
 	},
 	"scripts": {
