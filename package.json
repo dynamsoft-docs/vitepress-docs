@@ -1,5 +1,5 @@
 {
-	"name": "@dynamsoft/vitepress-docs",
+	"name": "@dynamsoft-docs/vitepress-docs",
 	"version": "0.1.0",
 	"description": "Dynamsoft docs-site toolkit for VitePress: corporate chrome theme, version switcher and multi-version builds, config factory, and docs bins.",
 	"license": "UNLICENSED",
@@ -50,7 +50,16 @@
 	"overrides": {
 		"vite": "npm:@voidzero-dev/vite-plus-core@0.2.6"
 	},
-	"engines": {
-		"node": ">=20.19.0"
+	"devEngines": {
+		"packageManager": {
+			"name": "npm",
+			"version": "^11.11.0",
+			"onFail": "error"
+		},
+		"runtime": {
+			"name": "node",
+			"version": "^24.0.0",
+			"onFail": "error"
+		}
 	}
 }
