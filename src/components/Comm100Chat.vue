@@ -9,7 +9,7 @@ const DEFAULTS = { siteId: 90003305, planId: "20242b05-3781-4d86-9b7f-fab63ddcdd
 
 onMounted(() => {
 	if (document.getElementById("ds-comm100")) return;
-	const { siteId, planId } = { ...DEFAULTS, ...(theme.value.comm100 ?? {}) };
+	const { siteId, planId } = { ...DEFAULTS, ...theme.value.comm100 };
 
 	const button = document.createElement("div");
 	button.id = `comm100-button-${planId}`;

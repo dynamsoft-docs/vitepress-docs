@@ -36,8 +36,7 @@ const output = readFileSync(file, "utf8")
 	.replace(/^---\n[^]*?\n---\n/, "")
 	.replace(
 		/^(\s*>)\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$/gm,
-		(_, /** @type {string} */ quote, /** @type {string} */ kind) =>
-			`${quote} **${title(kind)}**`,
+		(_, /** @type {string} */ quote, /** @type {string} */ kind) => `${quote} **${title(kind)}**`,
 	)
 	.replace(
 		/\]\(\/([^)\s]*)\)/g,

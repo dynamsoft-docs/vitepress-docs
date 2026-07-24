@@ -35,18 +35,20 @@
 		"check": "vp check"
 	},
 	"dependencies": {
-		"markdown-it-github-alerts": "^1.0.1"
+		"markdown-it-github-alerts": "^1.0.1",
+		"vue": "^3.5.0"
 	},
 	"devDependencies": {
 		"@types/node": "^24.0.0",
 		"typescript": "^5.8.0",
-		"vite-plus": "0.2.4",
-		"vitepress": "2.0.0-alpha.18",
-		"vue": "^3.5.0"
+		"vite-plus": "0.2.6",
+		"vitepress": "2.0.0-alpha.18"
 	},
 	"peerDependencies": {
-		"vitepress": "^1.6.0 || ^2.0.0-alpha.1",
-		"vue": "^3.5.0"
+		"vitepress": "^1.6.0 || ^2.0.0-alpha.1"
+	},
+	"overrides": {
+		"vite": "npm:@voidzero-dev/vite-plus-core@0.2.6"
 	},
 	"engines": {
 		"node": ">=20.19.0"
