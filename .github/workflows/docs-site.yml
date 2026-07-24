@@ -1,0 +1,124 @@
+# Reusable build/deploy job for Dynamsoft VitePress docs sites (README →
+# Deployment). Product repos keep a thin caller that owns the triggers and
+# passes `secrets: inherit` to forward the FTP secret pairs
+# (FTP_DYNAMSOFT_LOCAL_* for production, FTP_TEST_SITE_* for the demo3
+# test site) — see mds-js's .github/workflows/docs.yml for a working
+# example.
+
+name: Docs Site
+
+on:
+  workflow_call:
+    inputs:
+      deploy:
+        description: >-
+          Build every version designated in the docs version manifest via
+          ds-docs-build-versions and FTP-deploy the assembled tree.
+          Otherwise: verification build of the current ref only, uploaded
+          as an artifact.
+        type: boolean
+        default: false
+      beta:
+        description: "With deploy: target the test site instead of www.dynamsoft.com."
+        type: boolean
+        default: false
+      server-dir:
+        description: "FTP deploy target, e.g. /www.dynamsoft.com/<product>/docs/web/."
+        type: string
+        required: true
+      docs-dir:
+        description: "Docs package directory within the repository."
+        type: string
+        default: docs
+      node-version:
+        type: string
+        default: "24"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Full history so every branch tracked by the version manifest can
+          # be checked out and built.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      # --- deploy: false — fast verification build of the current ref ---
+      # Root install first: the API reference is typedoc-generated from the
+      # product source, which resolves types from the root node_modules
+      # (README → Setting up a docs site).
+      - name: Install SDK dependencies
+        if: ${{ !inputs.deploy }}
+        run: npm ci
+
+      - name: Install docs dependencies
+        if: ${{ !inputs.deploy }}
+        run: npm ci
+        working-directory: ${{ inputs.docs-dir }}
+
+      - name: Build docs site (typedoc + vitepress)
+        if: ${{ !inputs.deploy }}
+        run: npm run build
+        working-directory: ${{ inputs.docs-dir }}
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !inputs.deploy }}
+        with:
+          name: docs-site
+          path: ${{ inputs.docs-dir }}/.vitepress/dist/
+          retention-days: 7
+
+      # --- deploy: true — build every designated version ---
+      # versions.json in the docs package designates the versions (README →
+      # Versioning model); ds-docs-build-versions builds each tracked branch
+      # in a detached git worktree and assembles the tree together with the
+      # manifest. The same command works locally: npm run build:versions.
+      - name: Install docs dependencies (deploy)
+        if: ${{ inputs.deploy }}
+        run: npm ci
+        working-directory: ${{ inputs.docs-dir }}
+
+      - name: Build all designated versions
+        if: ${{ inputs.deploy }}
+        run: npx ds-docs-build-versions --out "$GITHUB_WORKSPACE/_site"
+        working-directory: ${{ inputs.docs-dir }}
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ inputs.deploy }}
+        with:
+          name: docs-site-all${{ inputs.beta && '-beta' || '' }}
+          path: _site/
+          retention-days: 7
+
+      # FTP-sync the assembled tree to the IIS server — the same mechanism
+      # and secrets as the Docs-Template-Repo called workflows (production
+      # vs test-site pair). The action's sync state only manages files it
+      # has uploaded itself, so pre-existing server content (e.g. frozen
+      # Jekyll-era version copies) is left untouched. If the FTP endpoints
+      # are reachable only from the internal network, these steps must move
+      # to a self-hosted runner (the fleet's sync jobs do).
+      - name: Deploy to production (www.dynamsoft.com)
+        if: ${{ inputs.deploy && !inputs.beta }}
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_DYNAMSOFT_LOCAL_SERVER }}
+          username: ${{ secrets.FTP_DYNAMSOFT_LOCAL_USER }}
+          password: ${{ secrets.FTP_DYNAMSOFT_LOCAL_PASSWORD }}
+          local-dir: _site/
+          server-dir: ${{ inputs.server-dir }}
+
+      - name: Deploy to beta (test site)
+        if: ${{ inputs.deploy && inputs.beta }}
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_TEST_SITE_SERVER }}
+          username: ${{ secrets.FTP_TEST_SITE_USER }}
+          password: ${{ secrets.FTP_TEST_SITE_PASSWORD }}
+          port: ${{ secrets.FTP_TEST_SITE_PORT }}
+          local-dir: _site/
+          server-dir: ${{ inputs.server-dir }}

@@ -60,10 +60,18 @@ inside `node_modules`; all of them are fully typed via JSDoc (+
 		"build:versions": "ds-docs-build-versions",
 	},
 	"devDependencies": {
-		"@dynamsoft/vitepress-docs": "<version>", // or file:../../vitepress-docs while unpublished
+		// or file:../../vitepress-docs for theme development
+		"@dynamsoft/vitepress-docs": "github:dynamsoft-docs/vitepress-docs#semver:^0.1.0",
 	},
 }
 ```
+
+The dependency is a git dep on this public repository — no registry, no
+auth. `#semver:` resolves against the repo's version tags (`v0.1.0`) and
+the consumer's lockfile pins the exact commit, so `npm ci` is
+reproducible. npm packs the clone with the usual `files`/`bin` rules, and
+the package ships source with no `prepare` script, so nothing builds at
+install time.
 
 ```ts
 // docs/.vitepress/theme/index.ts
@@ -159,7 +167,7 @@ present in this package's `node_modules`, not just the consumer's.
   but does **not** check `#anchors`; no existing tool generates or validates
   such links from symbol names (evaluated July 2026 — bespoke tooling
   rejected). If anchor rot ever becomes a problem, `lychee
-  --include-fragments` is an existing checker for markdown heading anchors.
+--include-fragments` is an existing checker for markdown heading anchors.
 - Single-sourcing pattern: a docs page can include a repository file via
   VitePress markdown inclusion, whole (e.g. a changelog page including the
   root `CHANGELOG.md`) or partially with `<!-- #region ... -->` markers.
@@ -205,15 +213,32 @@ current checkout.
 ## Deployment (fleet convention)
 
 Docs sites deploy as static trees FTP-synced to the IIS server behind
-www.dynamsoft.com. The conventional GitHub workflow (see mds-js's
-`.github/workflows/docs.yml` for a working example):
+www.dynamsoft.com. The build/deploy job is owned by this repo's reusable
+workflow, `.github/workflows/docs-site.yml`; each product repo keeps a thin
+caller owning its triggers (see mds-js's `.github/workflows/docs.yml` for a
+working example):
 
-- Push/PR runs build only the current checkout and upload the site as an
-  artifact for verification — no deployment.
-- Manual runs (`workflow_dispatch`) build every version designated in
-  `versions.json` via `ds-docs-build-versions` and FTP-sync the assembled
-  tree to the site's `docsRoot` — production, or the demo3 test site behind
-  a "beta" input (separate FTP secrets pair).
+```yaml
+jobs:
+  docs:
+    uses: dynamsoft-docs/vitepress-docs/.github/workflows/docs-site.yml@main
+    with:
+      deploy: ${{ github.event_name == 'workflow_dispatch' }}
+      beta: ${{ inputs.beta || false }}
+      server-dir: /www.dynamsoft.com/<product>/docs/web/
+    secrets: inherit
+```
+
+- Without `deploy`, the job builds only the current checkout (push/PR
+  verification) and uploads the site as an artifact — no deployment.
+- With `deploy` (conventionally `workflow_dispatch`), it builds every
+  version designated in `versions.json` via `ds-docs-build-versions` and
+  FTP-syncs the assembled tree to `server-dir` — production, or the demo3
+  test site behind the "beta" input (separate FTP secrets pair; both pairs
+  are forwarded by `secrets: inherit`).
+- `uses:` takes an exact ref — no `#semver:` ranges like the npm
+  dependency — so callers ride `@main`, or pin a release tag at the cost
+  of a second version to bump.
 - The FTP action's sync state only manages files it uploaded itself:
   pre-existing server content (e.g. frozen Jekyll-era version copies) is
   left untouched. Anything the site must own on the server — IIS
@@ -247,13 +272,20 @@ giving a faithful, server-rendered chrome with deterministic builds.
 
 ## Publishing
 
-The package is registry-ready: `npm pack` ships `src/` + the
-`ds-docs-build-versions` bin, and a tarball install has been verified to
-build a consuming site end to end (the config factory handles the
-non-linked-install requirements: `ssr.noExternal` and
-`optimizeDeps.exclude`). Publishing is: set `repository`/`license`,
-`npm publish` to the chosen registry, then consumers replace the `file:`
-link with a semver version — no other changes.
+Releases are git tags on this public repository; consumers depend on it
+directly as a git dep (Setting up a docs site), so no registry is
+involved and installs need no auth. Publishing a version is: bump
+`version` in package.json, commit, tag `vX.Y.Z`, push the tag. Git deps
+are packed from the clone with normal `npm pack` semantics, and a tarball
+install has been verified to build a consuming site end to end (the
+config factory handles the non-linked-install requirements:
+`ssr.noExternal` and `optimizeDeps.exclude`).
+
+Registries were evaluated and rejected: npmjs is not wanted for this
+internal toolkit, and GitHub Packages requires token auth even for
+public packages — a `read:packages` PAT in every docs contributor's
+environment. A git dep on the public repo gives semver ranges (against
+version tags) and lockfile-pinned commits with zero credentials.
 
 ## TODO: switch to `vp doc` (Vite+ bundled VitePress)
 
