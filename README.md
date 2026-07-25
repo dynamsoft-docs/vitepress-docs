@@ -4,44 +4,43 @@ Shared VitePress theme for Dynamsoft product documentation sites (based off
 of the default VitePress theme).
 
 1. **Corporate header/footer** — `scripts/sync-chrome.mts`. vendors theming by
-  extracting from [Docs-Template-Repo](https://github.com/dynamsoft-docs/Docs-Template-Repo)
-  and `www.dynamsoft.com`. The sync transforms make the cascade safe inside
-  a VitePress page:
-		1. url() absolutization (template assets resolve to GitHub
-  raw)
+	extracting from [Docs-Template-Repo](https://github.com/dynamsoft-docs/Docs-Template-Repo)
+	and `www.dynamsoft.com`. The sync transforms make the cascade safe inside
+	a VitePress page:
+		1. url() absolutization (template assets resolve to GitHub raw)
 		2. rem→px against the fleet's 10px root
 		3. @font-face hoisting (font URLs
-  retargeted to the shared webres copies — GitHub raw's max-age=300 plus the
-  fleet's `font-display: optional` made fresh visits render in the UA serif;
-  rewritten to `font-display: swap`)
+	retargeted to the shared webres copies — GitHub raw's max-age=300 plus the
+	fleet's `font-display: optional` made fresh visits render in the UA serif;
+	rewritten to `font-display: swap`)
 		4. sans-serif fallbacks on the fleet's
-  bare custom font stacks, and `@scope (.ds-corporate)` isolation
+	bare custom font stacks, and `@scope (.ds-corporate)` isolation
 		5. a small shim in `CorporateHeader.vue` reproduces the corporate menu behaviour
-  (click-toggled panels, Escape and outside-click close) since `layout.js`
-  is not vendored
+	(click-toggled panels, Escape and outside-click close) since `layout.js`
+	is not vendored
 		6. the header scrolls away with the page while the VitePress
-  nav bar docks at the viewport top
+	nav bar docks at the viewport top
 		7. known gaps: the mobile hamburger menu is inert, and the signed-in account widget shows its logged-out state.
 - **Doc skin** — `styles/doc-skin.css` styles the article body like the
-  original Jekyll docs (GitHub-markdown look in OpenSans: 16px/26px `#24292e`
-  text, `#0366d6` links, bordered GFM tables, `#f5f5f5` code blocks), with a
-  dark-mode palette falling back to VitePress colours.
+	original Jekyll docs (GitHub-markdown look in OpenSans: 16px/26px `#24292e`
+	text, `#0366d6` links, bordered GFM tables, `#f5f5f5` code blocks), with a
+	dark-mode palette falling back to VitePress colours.
 - **Breadcrumbs** — nav-bar trail replacing the site title, ending in the
-  page title; directory labels overridable via `breadcrumbLabels`.
+	page title; directory labels overridable via `breadcrumbLabels`.
 - **Version switcher** — a sidebar dropdown driven by the version manifest
-  (see Versioning below).
+	(see Versioning below).
 - **Comm100 live chat** — fleet-wide site/plan defaults, overridable via
-  `themeConfig.comm100`.
+	`themeConfig.comm100`.
 - **Brand accents** — Dynamsoft orange for nav/sidebar highlights.
 - **Config defaults** — `defineDynamsoftConfig` (the `./config` export)
-  wraps a site's VitePress config with the fleet-wide mechanics: versioned
-  `base` from `themeConfig.docsRoot` + the `DOCS_VERSION` env var,
-  GitHub-style GFM alerts (`> [!NOTE]` etc.) via markdown-it-github-alerts
-  (plugin wired here, styles imported by the theme entry), version-manifest
-  serving/publishing, local full-text search (no Algolia), nav-banner
-  conventions, vue/vitepress dedupe, and bundling of this theme
-  (`ssr.noExternal` + `optimizeDeps.exclude`). Anything it sets can be
-  overridden by the site config it wraps.
+	wraps a site's VitePress config with the fleet-wide mechanics: versioned
+	`base` from `themeConfig.docsRoot` + the `DOCS_VERSION` env var,
+	GitHub-style GFM alerts (`> [!NOTE]` etc.) via markdown-it-github-alerts
+	(plugin wired here, styles imported by the theme entry), version-manifest
+	serving/publishing, local full-text search (no Algolia), nav-banner
+	conventions, vue/vitepress dedupe, and bundling of this theme
+	(`ssr.noExternal` + `optimizeDeps.exclude`). Anything it sets can be
+	overridden by the site config it wraps.
 
 The package ships TypeScript/Vue source (no build step); the consuming
 site's VitePress compiles it.
@@ -142,24 +141,24 @@ present in this package's `node_modules`, not just the consumer's.
 ## Content conventions
 
 - `api/` is generated from TSDoc comments via typedoc +
-  typedoc-plugin-markdown + typedoc-vitepress-theme. VitePress has no built-in
-  for file-structure sidebar derivation .
+typedoc-plugin-markdown + typedoc-vitepress-theme. VitePress has no built-in
+for file-structure sidebar derivation .
 - GFM callouts (`> [!NOTE]` etc.) render GitHub-style out of the box.
 - The `ds-docs-npm-readme` bin renders a guide page npm-ready: it prints the
-  page with site-relative links absolutized against the given production
-  site root (`.md` paths mapped to the published `.html` pages) and GFM
-  alert markers downgraded to plain `> **Note**` blockquotes — npm renders
-  neither. Product repos whose npm package should carry the full guide run
-  it in their publish workflow just before `npm pack`:
-  `ds-docs-npm-readme guide/index.md --site https://…/docs/web/ > README.md`.
-  It is dependency-free, so it can also be run with plain `node` straight
-  from a checkout of this repo.
+	page with site-relative links absolutized against the given production
+	site root (`.md` paths mapped to the published `.html` pages) and GFM
+	alert markers downgraded to plain `> **Note**` blockquotes — npm renders
+	neither. Product repos whose npm package should carry the full guide run
+	it in their publish workflow just before `npm pack`:
+	`ds-docs-npm-readme guide/index.md --site https://…/docs/web/ > README.md`.
+	It is dependency-free, so it can also be run with plain `node` straight
+	from a checkout of this repo.
 - A docs `README.md` is excluded from the site (it documents the docs setup).
 - Single-sourcing pattern: a docs page can include a repository file via
-  VitePress markdown inclusion, whole (e.g. a changelog page including the
-  root `CHANGELOG.md`) or partially with `<!-- #region ... -->` markers.
-  Includes fail **silently** — if the page renders empty, check the included
-  file and markers still exist.
+	VitePress markdown inclusion, whole (e.g. a changelog page including the
+	root `CHANGELOG.md`) or partially with `<!-- #region ... -->` markers.
+	Includes fail **silently** — if the page renders empty, check the included
+	file and markers still exist.
 
 ## Versioning model (branch-tracked, manifest-driven)
 
@@ -177,10 +176,10 @@ tracked for which version, with which label:
 
 - `label` — text shown in the version switcher.
 - `path` — URL subpath under `docsRoot`: `""` for the root/latest, otherwise
-  with a trailing slash.
+	with a trailing slash.
 - `branch` — the git branch built for this version. Only branches containing
-  the docs toolchain can be tracked; entries without a `branch` are listed in
-  the switcher but not built (frozen copies that live only on the server).
+	the docs toolchain can be tracked; entries without a `branch` are listed in
+	the switcher but not built (frozen copies that live only on the server).
 
 The `ds-docs-build-versions` bin builds every branch-tracked entry in a
 detached git worktree (created as a sibling of the repo root so `file:`
@@ -217,20 +216,20 @@ jobs:
 - Without `deploy`, the job builds only the current checkout (push/PR
   verification) and uploads the site as an artifact — no deployment.
 - With `deploy` (conventionally `workflow_dispatch`), it builds every
-  version designated in `versions.json` via `ds-docs-build-versions` and
-  FTP-syncs the assembled tree to `server-dir` — production, or the demo3
-  test site behind the "beta" input (separate FTP secrets pair; both pairs
-  are forwarded by `secrets: inherit`).
+	version designated in `versions.json` via `ds-docs-build-versions` and
+	FTP-syncs the assembled tree to `server-dir` — production, or the demo3
+	test site behind the "beta" input (separate FTP secrets pair; both pairs
+	are forwarded by `secrets: inherit`).
 - `uses:` takes an exact ref — no `#semver:` ranges like the npm
-  dependency — so callers ride `@main`, or pin a release tag at the cost
-  of a second version to bump.
+	dependency — so callers ride `@main`, or pin a release tag at the cost
+	of a second version to bump.
 - The FTP action's sync state only manages files it uploaded itself:
-  pre-existing server content (e.g. frozen Jekyll-era version copies) is
-  left untouched. Anything the site must own on the server — IIS
-  `web.config` redirects, for instance — lives at the docs package root
-  (`<docs>/web.config`), which the config factory copies into the built
-  site at `buildEnd`, like the version manifest. `public/` is untracked
-  scratch space by fleet convention, so deploy files never live there.
+	pre-existing server content (e.g. frozen Jekyll-era version copies) is
+	left untouched. Anything the site must own on the server — IIS
+	`web.config` redirects, for instance — lives at the docs package root
+	(`<docs>/web.config`), which the config factory copies into the built
+	site at `buildEnd`, like the version manifest. `public/` is untracked
+	scratch space by fleet convention, so deploy files never live there.
 
 ## Updating the corporate chrome
 
@@ -266,12 +265,12 @@ the fleet-pinned `vite-plus 0.2.4` doesn't include the module yet
 it, migrate:
 
 1. Bump `vite-plus` in the product root, docs packages, and this repo
-   together.
+	together.
 2. Replace `vitepress dev/build` with `vp doc dev/build` in docs scripts and
-   drop the explicit `vitepress` devDependency.
+	drop the explicit `vitepress` devDependency.
 3. **Smoke-test this theme first**: it imports bare
-   `vitepress`/`vitepress/theme` as a peer — those must resolve to vp's
-   bundled copy, or the site silently falls back to the default theme
-   (dual-instance; see `resolve.dedupe` in the config factory).
+	`vitepress`/`vitepress/theme` as a peer — those must resolve to vp's
+	bundled copy, or the site silently falls back to the default theme
+	(dual-instance; see `resolve.dedupe` in the config factory).
 4. Accept that the VitePress version then rides vite-plus releases instead
-   of an explicit pin.
+	of an explicit pin.
