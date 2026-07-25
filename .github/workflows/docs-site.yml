@@ -40,9 +40,13 @@ jobs:
           # be checked out and built.
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6
+      # Installs Vite+, Node, and the package manager, with dependency
+      # caching (vp docs → Continuous Integration).
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
         with:
           node-version: ${{ inputs.node-version }}
+          cache: true
 
       # --- deploy: false — fast verification build of the current ref ---
       # Root install first: the API reference is typedoc-generated from the
@@ -50,16 +54,19 @@ jobs:
       # (README → Setting up a docs site).
       - name: Install SDK dependencies
         if: ${{ !inputs.deploy }}
-        run: npm ci
+        run: vp install
 
       - name: Install docs dependencies
         if: ${{ !inputs.deploy }}
-        run: npm ci
+        run: vp install
         working-directory: ${{ inputs.docs-dir }}
 
+      # The docs build script still invokes the `vitepress` CLI directly:
+      # `vp doc` is not shipped in vite-plus 0.2.6 (the command exists but
+      # dist/vitepress is absent) — see README → TODO.
       - name: Build docs site (typedoc + vitepress)
         if: ${{ !inputs.deploy }}
-        run: npm run build
+        run: vp run build
         working-directory: ${{ inputs.docs-dir }}
 
       - uses: actions/upload-artifact@v7
@@ -73,15 +80,17 @@ jobs:
       # versions.json in the docs package designates the versions (README →
       # Versioning model); ds-docs-build-versions builds each tracked branch
       # in a detached git worktree and assembles the tree together with the
-      # manifest. The same command works locally: npm run build:versions.
+      # manifest (internally it shells npm ci / npm run build per worktree —
+      # each branch's `vitepress build`, since `vp doc` is not shipped yet).
+      # The same command works locally: npm run build:versions.
       - name: Install docs dependencies (deploy)
         if: ${{ inputs.deploy }}
-        run: npm ci
+        run: vp install
         working-directory: ${{ inputs.docs-dir }}
 
       - name: Build all designated versions
         if: ${{ inputs.deploy }}
-        run: npx ds-docs-build-versions --out "$GITHUB_WORKSPACE/_site"
+        run: vp exec ds-docs-build-versions --out "$GITHUB_WORKSPACE/_site"
         working-directory: ${{ inputs.docs-dir }}
 
       - uses: actions/upload-artifact@v7
