@@ -80,6 +80,14 @@ jobs:
       # manifest (internally it shells npm ci / npm run build per worktree —
       # each branch's `vitepress build`, since `vp doc` is not shipped yet).
       # The same command works locally: npm run build:versions.
+      # actions/checkout materializes sibling branches only as origin/*
+      # remote refs, but ds-docs-build-versions resolves the manifest's
+      # tracked branches by local name; give every remote branch a local
+      # ref (--update-head-ok: the checked-out branch is a same-sha no-op).
+      - name: Create local refs for tracked branches
+        if: ${{ inputs.deploy }}
+        run: git fetch --update-head-ok origin '+refs/heads/*:refs/heads/*'
+
       - name: Install docs dependencies (deploy)
         if: ${{ inputs.deploy }}
         run: vp install
