@@ -138,8 +138,20 @@ jobs:
           local-dir: _site/
           server-dir: ${{ inputs.server-dir }}
 
+  # The test-site FTP endpoint is only reachable from self-hosted
+  # upload-test runner.
+  deploy-beta:
+    if: ${{ inputs.deploy && inputs.beta }}
+    needs: build
+    runs-on: [self-hosted, upload-test]
+    steps:
+      - name: Download the assembled site
+        uses: actions/download-artifact@v8
+        with:
+          name: docs-site-all-beta
+          path: _site
+
       - name: Deploy to beta (test site)
-        if: ${{ inputs.deploy && inputs.beta }}
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.FTP_TEST_SITE_SERVER }}
