@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Print an npm-renderable README generated from a docs-site guide page.
+ * Generate an npm-renderable README generated from a docs-site guide page.
  *
  * npm renders neither site-relative links nor GFM alert admonitions, so
- * this drops a leading HTML comment (authoring note) and YAML frontmatter,
+ * this drops any leading HTML comment (authoring note) and YAML frontmatter,
  * absolutizes site-relative links against the given production site root
  * (mapping `.md` source paths to the published `.html` pages), and
  * downgrades GFM alert markers (`> [!NOTE]` etc.) to plain bold

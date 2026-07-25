@@ -1,23 +1,27 @@
 # @dynamsoft/vitepress-docs
 
-Shared VitePress theme for Dynamsoft product documentation sites. Extends the
-default VitePress theme with:
+Shared VitePress theme for Dynamsoft product documentation sites (based off
+of the default VitePress theme).
 
-- **Corporate header/footer** — the real markup from
-  [Docs-Template-Repo](https://github.com/dynamsoft-docs/Docs-Template-Repo)
-  plus the fleet's full stylesheet cascade, vendored by
-  `scripts/sync-chrome.mts`. The sync transforms make the cascade safe inside
-  a VitePress page: url() absolutization (template assets resolve to GitHub
-  raw), rem→px against the fleet's 10px root, @font-face hoisting (font URLs
+1. **Corporate header/footer** — `scripts/sync-chrome.mts`. vendors theming by
+  extracting from [Docs-Template-Repo](https://github.com/dynamsoft-docs/Docs-Template-Repo)
+  and `www.dynamsoft.com`. The sync transforms make the cascade safe inside
+  a VitePress page:
+		1. url() absolutization (template assets resolve to GitHub
+  raw)
+		2. rem→px against the fleet's 10px root
+		3. @font-face hoisting (font URLs
   retargeted to the shared webres copies — GitHub raw's max-age=300 plus the
   fleet's `font-display: optional` made fresh visits render in the UA serif;
-  rewritten to `font-display: swap`), sans-serif fallbacks on the fleet's
-  bare custom font stacks, and `@scope (.ds-corporate)` isolation. A small
-  shim in `CorporateHeader.vue` reproduces the corporate menu behaviour
+  rewritten to `font-display: swap`)
+		4. sans-serif fallbacks on the fleet's
+  bare custom font stacks, and `@scope (.ds-corporate)` isolation
+		5. a small shim in `CorporateHeader.vue` reproduces the corporate menu behaviour
   (click-toggled panels, Escape and outside-click close) since `layout.js`
-  is not vendored; the header scrolls away with the page while the VitePress
-  nav bar docks at the viewport top. Known gaps: the mobile hamburger menu
-  is inert, and the signed-in account widget shows its logged-out state.
+  is not vendored
+		6. the header scrolls away with the page while the VitePress
+  nav bar docks at the viewport top
+		7. known gaps: the mobile hamburger menu is inert, and the signed-in account widget shows its logged-out state.
 - **Doc skin** — `styles/doc-skin.css` styles the article body like the
   original Jekyll docs (GitHub-markdown look in OpenSans: 16px/26px `#24292e`
   text, `#0366d6` links, bordered GFM tables, `#f5f5f5` code blocks), with a
@@ -40,12 +44,7 @@ default VitePress theme with:
   overridden by the site config it wraps.
 
 The package ships TypeScript/Vue source (no build step); the consuming
-site's VitePress compiles it. A few shipped files must stay JavaScript —
-`src/config.js` (loaded by Node when VitePress bundles the site config) and
-the `scripts/*.mjs` bins — because Node refuses to type-strip TypeScript
-inside `node_modules`; all of them are fully typed via JSDoc (+
-`config.d.ts`) and type-checked with `checkJs`. The maintainer-only
-`scripts/sync-chrome.mts` is TypeScript (run it with Node ≥ 23.6).
+site's VitePress compiles it.
 
 ## Setting up a docs site
 
@@ -66,8 +65,7 @@ inside `node_modules`; all of them are fully typed via JSDoc (+
 }
 ```
 
-The dependency is a git dep on this public repository — no registry, no
-auth. `#semver:` resolves against the repo's version tags (`v0.1.0`) and
+`#semver:` resolves against the repo's version tags (`v0.1.0`) and
 the consumer's lockfile pins the exact commit, so `npm ci` is
 reproducible. npm packs the clone with the usual `files`/`bin` rules, and
 the package ships source with no `prepare` script, so nothing builds at
@@ -144,12 +142,8 @@ present in this package's `node_modules`, not just the consumer's.
 ## Content conventions
 
 - `api/` is generated from TSDoc comments via typedoc +
-  typedoc-plugin-markdown + typedoc-vitepress-theme; improve API docs by
-  editing the TSDoc in the product source, not the output. `loadApiSidebar()`
-  reads the generated sidebar. (File-structure sidebar derivation was
-  evaluated in July 2026 and rejected: VitePress has no built-in for it, and
-  a scanner — bespoke or the vitepress-sidebar package — costs more than
-  the few sidebar lines it replaces.)
+  typedoc-plugin-markdown + typedoc-vitepress-theme. VitePress has no built-in
+  for file-structure sidebar derivation .
 - GFM callouts (`> [!NOTE]` etc.) render GitHub-style out of the box.
 - The `ds-docs-npm-readme` bin renders a guide page npm-ready: it prints the
   page with site-relative links absolutized against the given production
@@ -161,13 +155,6 @@ present in this package's `node_modules`, not just the consumer's.
   It is dependency-free, so it can also be run with plain `node` straight
   from a checkout of this repo.
 - A docs `README.md` is excluded from the site (it documents the docs setup).
-- Prose links into the API reference are handwritten and site-relative
-  (`/api/…#anchor`, pointing at the typedoc-generated pages) so they stay
-  correct inside versioned builds. VitePress fails the build on dead pages
-  but does **not** check `#anchors`; no existing tool generates or validates
-  such links from symbol names (evaluated July 2026 — bespoke tooling
-  rejected). If anchor rot ever becomes a problem, `lychee
---include-fragments` is an existing checker for markdown heading anchors.
 - Single-sourcing pattern: a docs page can include a repository file via
   VitePress markdown inclusion, whole (e.g. a changelog page including the
   root `CHANGELOG.md`) or partially with `<!-- #region ... -->` markers.
@@ -206,9 +193,7 @@ deploy as a whole. `defineDynamsoftConfig` serves the manifest at
 `npm run dev` serves the **current checkout live** at the docs root and the
 **other versions statically** from the assembled tree at `<repo>/_site`, so
 the version switcher works in dev — run `npm run build:versions` once to
-assemble it (a version that has not been assembled yet answers with a 404
-explaining exactly that). A plain `npm run build` still builds only the
-current checkout.
+assemble it first to serve it with `npm run dev`.
 
 ## Deployment (fleet convention)
 
@@ -256,19 +241,10 @@ _markup_ and the stylesheet cascade are vendored. Refresh with:
 npm run sync-chrome   # re-vendor markup + styles; review and commit the diff
 ```
 
-Reads a local Docs-Template-Repo checkout (`DOCS_TEMPLATE_REPO` env var or
-`../documentation/Docs-Template-Repo`) via `git show`, falling back to GitHub
-raw; webres stylesheets are fetched from www.dynamsoft.com.
-
-### Design decision: vendored chrome with sync transforms
-
-Three approaches were tried for the corporate chrome. Live-linking the
-corporate stylesheets in a shadow root fails structurally (@font-face does
-not register inside shadow trees; rem sizes assume the fleet's
-`html{font-size:10px}`). Hand-written approximations were compact but could
-not match the original look. The final mechanism vendors the real markup and
-CSS and fixes both mismatches at sync time (rem→px, font retargeting),
-giving a faithful, server-rendered chrome with deterministic builds.
+Fetches Docs-Template-Repo from GitHub raw on `main` (`DOCS_TEMPLATE_BRANCH`
+overrides the branch); set `DOCS_TEMPLATE_REPO` to a local checkout to read
+via `git show` instead (offline/pre-push work). webres stylesheets are
+fetched from www.dynamsoft.com.
 
 ## Publishing
 
@@ -280,12 +256,6 @@ are packed from the clone with normal `npm pack` semantics, and a tarball
 install has been verified to build a consuming site end to end (the
 config factory handles the non-linked-install requirements:
 `ssr.noExternal` and `optimizeDeps.exclude`).
-
-Registries were evaluated and rejected: npmjs is not wanted for this
-internal toolkit, and GitHub Packages requires token auth even for
-public packages — a `read:packages` PAT in every docs contributor's
-environment. A git dep on the public repo gives semver ranges (against
-version tags) and lockfile-pinned commits with zero credentials.
 
 ## TODO: switch to `vp doc` (Vite+ bundled VitePress)
 

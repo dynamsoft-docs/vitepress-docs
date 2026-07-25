@@ -3,9 +3,7 @@ import type { DefaultTheme } from "vitepress";
 // Use corporate fonts
 import VPTheme from "vitepress/theme-without-fonts";
 import Layout from "./Layout.vue";
-// GFM alert styles for the markup produced by markdown-it-github-alerts,
-// which `defineDynamsoftConfig` (the ./config export) wires into markdown-it.
-// The -class dark variant matches VitePress's `.dark` class on <html>.
+
 import "markdown-it-github-alerts/styles/github-base.css";
 import "markdown-it-github-alerts/styles/github-colors-light.css";
 import "markdown-it-github-alerts/styles/github-colors-dark-class.css";
@@ -14,7 +12,7 @@ import "./styles/doc-skin.css";
 
 /** Theme config consumed via `defineConfigWithTheme<DynamsoftThemeConfig>`. */
 export interface DynamsoftThemeConfig extends DefaultTheme.Config {
-	/** Site root of the "latest" docs for this product; versions.json lives here. */
+	/** Site root of the "latest" docs for this product; respect copy of versions.json here. */
 	docsRoot: string;
 	/** Render the Dynamsoft corporate header/footer. */
 	dynamsoftChrome: boolean;

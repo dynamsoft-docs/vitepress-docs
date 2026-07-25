@@ -2,12 +2,13 @@
 /**
  * Vendors the corporate header/footer — markup and styling — from
  * Docs-Template-Repo and the shared webres stylesheets into src/chrome/.
+ * Run periodically to sync up with corporate theming.
  *
- * Markup is read from a local checkout when available (DOCS_TEMPLATE_REPO env
- * var, or ../documentation/Docs-Template-Repo relative to this repo's
- * parent), always from the named branch via `git show`; falls back to GitHub
- * raw. Template-repo stylesheets are read the same way; webres stylesheets
- * are fetched from www.dynamsoft.com.
+ * Markup is fetched from GitHub raw on main (DOCS_TEMPLATE_BRANCH overrides
+ * the branch); set DOCS_TEMPLATE_REPO to a local checkout to read the same
+ * branch via `git show` instead (offline/pre-push work). Template-repo
+ * stylesheets are read the same way; webres stylesheets are fetched from
+ * www.dynamsoft.com.
  *
  * Each stylesheet is transformed so the corporate cascade renders correctly
  * inside a VitePress page without leaking into it:
@@ -26,10 +27,6 @@
  *      sans-serif fallbacks so the not-yet-loaded state is never UA serif,
  *   5. :root/html/body selectors are rewritten to :scope,
  *   6. everything is wrapped in `@scope (.ds-corporate) { ... }`.
- *
- * Maintainer-only (not shipped in the npm package), so it can be TypeScript:
- * requires a Node version with type stripping (≥ 23.6; the fleet uses 24).
- * Re-run periodically and commit the diff to pick up upstream chrome changes.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -38,8 +35,8 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const outDir = resolve(here, "../src/chrome");
-const localRepo =
-	process.env.DOCS_TEMPLATE_REPO ?? resolve(here, "../../documentation/Docs-Template-Repo");
+// Explicit opt-in for offline/pre-push work; GitHub raw is the default source.
+const localRepo = process.env.DOCS_TEMPLATE_REPO;
 const branch = process.env.DOCS_TEMPLATE_BRANCH ?? "main";
 const rawBase = `https://raw.githubusercontent.com/dynamsoft-docs/Docs-Template-Repo/${branch}/`;
 const webres = "https://www.dynamsoft.com/webres/wwwroot/";
@@ -74,7 +71,10 @@ const cssSources: CssSource[] = [
 ];
 
 async function readTemplateFile(src: string): Promise<string> {
-	if (existsSync(resolve(localRepo, ".git"))) {
+	if (localRepo) {
+		if (!existsSync(resolve(localRepo, ".git"))) {
+			throw new Error(`DOCS_TEMPLATE_REPO is not a git checkout: ${localRepo}`);
+		}
 		return execFileSync("git", ["-C", localRepo, "show", `${branch}:${src}`], {
 			encoding: "utf8",
 			maxBuffer: 16 * 1024 * 1024,

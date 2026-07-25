@@ -1,9 +1,5 @@
-# Reusable build/deploy job for Dynamsoft VitePress docs sites (README →
-# Deployment). Product repos keep a thin caller that owns the triggers and
-# passes `secrets: inherit` to forward the FTP secret pairs
-# (FTP_DYNAMSOFT_LOCAL_* for production, FTP_TEST_SITE_* for the demo3
-# test site) — see mds-js's .github/workflows/docs.yml for a working
-# example.
+# Reusable build/deploy job for Dynamsoft VitePress docs sites ( see README →
+# Deployment)
 
 name: Docs Site
 
@@ -36,7 +32,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, doc-build]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -95,13 +91,7 @@ jobs:
           path: _site/
           retention-days: 7
 
-      # FTP-sync the assembled tree to the IIS server — the same mechanism
-      # and secrets as the Docs-Template-Repo called workflows (production
-      # vs test-site pair). The action's sync state only manages files it
-      # has uploaded itself, so pre-existing server content (e.g. frozen
-      # Jekyll-era version copies) is left untouched. If the FTP endpoints
-      # are reachable only from the internal network, these steps must move
-      # to a self-hosted runner (the fleet's sync jobs do).
+      # FTP-sync the assembled tree to the IIS server
       - name: Deploy to production (www.dynamsoft.com)
         if: ${{ inputs.deploy && !inputs.beta }}
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0

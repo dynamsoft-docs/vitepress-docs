@@ -11,10 +11,6 @@
  * listed in the version switcher but not built (frozen copies that live
  * only on the server).
  *
- * Worktrees are created as siblings of the repository root so relative
- * file: dependencies (e.g. ../../vitepress-docs) resolve the
- * same way they do in the primary checkout.
- *
  * Usage: ds-docs-build-versions [--manifest versions.json] [--out <repo>/_site]
  */
 import { execFileSync } from "node:child_process";
