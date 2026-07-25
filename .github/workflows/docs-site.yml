@@ -26,9 +26,6 @@ on:
         description: "Docs package directory within the repository."
         type: string
         default: docs
-      node-version:
-        type: string
-        default: "24"
 
 jobs:
   build:
@@ -45,7 +42,7 @@ jobs:
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@v1
         with:
-          node-version: ${{ inputs.node-version }}
+          node-version-file: package.json
           cache: true
 
       # --- deploy: false — fast verification build of the current ref ---
