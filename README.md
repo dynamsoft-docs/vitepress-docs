@@ -210,7 +210,17 @@ jobs:
       deploy: ${{ github.event_name == 'workflow_dispatch' }}
       beta: ${{ inputs.beta || false }}
       server-dir: /www.dynamsoft.com/<product>/docs/web/
-    secrets: inherit
+    # Explicit, not `secrets: inherit`: inherited secrets do not cross
+    # organization boundaries, and product repos live outside
+    # dynamsoft-docs — inherit silently passes nothing.
+    secrets:
+      FTP_DYNAMSOFT_LOCAL_SERVER: ${{ secrets.FTP_DYNAMSOFT_LOCAL_SERVER }}
+      FTP_DYNAMSOFT_LOCAL_USER: ${{ secrets.FTP_DYNAMSOFT_LOCAL_USER }}
+      FTP_DYNAMSOFT_LOCAL_PASSWORD: ${{ secrets.FTP_DYNAMSOFT_LOCAL_PASSWORD }}
+      FTP_TEST_SITE_SERVER: ${{ secrets.FTP_TEST_SITE_SERVER }}
+      FTP_TEST_SITE_USER: ${{ secrets.FTP_TEST_SITE_USER }}
+      FTP_TEST_SITE_PASSWORD: ${{ secrets.FTP_TEST_SITE_PASSWORD }}
+      FTP_TEST_SITE_PORT: ${{ secrets.FTP_TEST_SITE_PORT }}
 ```
 
 - Without `deploy`, the job builds only the current checkout (push/PR
@@ -219,7 +229,8 @@ jobs:
 	version designated in `versions.json` via `ds-docs-build-versions` and
 	FTP-syncs the assembled tree to `server-dir` — production, or the demo3
 	test site behind the "beta" input (separate FTP secrets pair; both pairs
-	are forwarded by `secrets: inherit`).
+	are passed explicitly by the caller, declared under
+	`on.workflow_call.secrets`).
 - `uses:` takes an exact ref — no `#semver:` ranges like the npm
 	dependency — so callers ride `@main`, or pin a release tag at the cost
 	of a second version to bump.

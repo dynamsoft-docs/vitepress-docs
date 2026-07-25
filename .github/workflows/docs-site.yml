@@ -26,6 +26,28 @@ on:
         description: "Docs package directory within the repository."
         type: string
         default: docs
+    # Declared explicitly (not `secrets: inherit`): callers live in other
+    # organizations, and GitHub only propagates inherited secrets within
+    # one org/enterprise — across orgs, inherit silently passes nothing.
+    # All optional so verification-only callers need no secrets; deploy
+    # runs need the pair matching their target.
+    secrets:
+      FTP_DYNAMSOFT_LOCAL_SERVER:
+        description: "Production FTP host (deploy without beta)."
+        required: false
+      FTP_DYNAMSOFT_LOCAL_USER:
+        required: false
+      FTP_DYNAMSOFT_LOCAL_PASSWORD:
+        required: false
+      FTP_TEST_SITE_SERVER:
+        description: "Test-site FTP host (deploy with beta)."
+        required: false
+      FTP_TEST_SITE_USER:
+        required: false
+      FTP_TEST_SITE_PASSWORD:
+        required: false
+      FTP_TEST_SITE_PORT:
+        required: false
 
 jobs:
   build:
