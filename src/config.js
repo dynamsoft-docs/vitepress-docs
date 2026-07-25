@@ -206,7 +206,10 @@ export function defineDynamsoftConfig(config) {
 				// Linked (file:) installs are excluded automatically; registry
 				// installs need it explicit.
 				exclude: [
-					...new Set(["@dynamsoft/vitepress-docs", ...(config.vite?.optimizeDeps?.exclude ?? [])]),
+					...new Set([
+						"@dynamsoft-docs/vitepress-docs",
+						...(config.vite?.optimizeDeps?.exclude ?? []),
+					]),
 				],
 			},
 			ssr: {
@@ -215,7 +218,7 @@ export function defineDynamsoftConfig(config) {
 					siteNoExternal === true
 						? true
 						: [
-								"@dynamsoft/vitepress-docs",
+								"@dynamsoft-docs/vitepress-docs",
 								...(Array.isArray(siteNoExternal)
 									? siteNoExternal
 									: siteNoExternal

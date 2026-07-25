@@ -1,4 +1,4 @@
-# @dynamsoft/vitepress-docs
+# @dynamsoft-docs/vitepress-docs
 
 Shared VitePress theme for Dynamsoft product documentation sites (based off
 of the default VitePress theme).
@@ -60,7 +60,7 @@ site's VitePress compiles it.
 	},
 	"devDependencies": {
 		// or file:../../vitepress-docs for theme development
-		"@dynamsoft/vitepress-docs": "github:dynamsoft-docs/vitepress-docs#semver:^0.1.0",
+		"@dynamsoft-docs/vitepress-docs": "git+https://github.com/dynamsoft-docs/vitepress-docs.git#semver:^0.1.0",
 	},
 }
 ```
@@ -73,13 +73,13 @@ install time.
 
 ```ts
 // docs/.vitepress/theme/index.ts
-import DynamsoftTheme from "@dynamsoft/vitepress-docs";
+import DynamsoftTheme from "@dynamsoft-docs/vitepress-docs";
 export default DynamsoftTheme;
 ```
 
 ```ts
 // docs/.vitepress/config.mts
-import { defineDynamsoftConfig, loadApiSidebar } from "@dynamsoft/vitepress-docs/config";
+import { defineDynamsoftConfig, loadApiSidebar } from "@dynamsoft-docs/vitepress-docs/config";
 
 export default defineDynamsoftConfig({
 	title: "Your Product",
@@ -99,7 +99,7 @@ export default defineDynamsoftConfig({
 ```jsonc
 // docs/tsconfig.json — typechecking for the config/theme files
 {
-	"extends": "@dynamsoft/vitepress-docs/tsconfig.base.json",
+	"extends": "@dynamsoft-docs/vitepress-docs/tsconfig.base.json",
 	"include": ["env.d.ts", ".vitepress/**/*.ts", ".vitepress/**/*.mts", ".vitepress/**/*.vue"],
 }
 ```
@@ -113,7 +113,7 @@ export default defineDynamsoftConfig({
 	// (out, docsRoot, basePath, tsconfig, entryPoints) resolve relative to
 	// the file DECLARING them — typedoc resolves an extended config's paths
 	// against its own location inside node_modules — so they must stay here.
-	"extends": ["@dynamsoft/vitepress-docs/typedoc.base.json"],
+	"extends": ["@dynamsoft-docs/vitepress-docs/typedoc.base.json"],
 	"name": "Your Product API Reference",
 	"entryPoints": ["../src/index.ts"],
 	"tsconfig": "../tsconfig.json",
