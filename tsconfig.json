@@ -5,6 +5,7 @@
 		"src/**/*.ts",
 		"src/**/*.vue",
 		"src/config.js",
+		"src/typedoc.js",
 		"scripts/**/*.mjs",
 		"scripts/**/*.mts"
 	]

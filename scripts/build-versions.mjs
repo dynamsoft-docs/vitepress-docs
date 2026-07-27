@@ -83,7 +83,9 @@ for (const [i, version] of tracked.entries()) {
 		run(npm, ["ci"], worktree);
 		run(npm, ["ci"], worktreeDocs);
 		run(npm, ["run", "build"], worktreeDocs, {
-			DOCS_VERSION: (version.path ?? "").replace(/\/+$/, ""),
+			DOCS_VERSION: version.path ?? "",
+			// Where the API reference points its source links.
+			DOCS_BRANCH: version.branch,
 		});
 		const dest = join(outDir, version.path ?? "");
 		mkdirSync(dest, { recursive: true });

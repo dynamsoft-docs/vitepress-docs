@@ -103,24 +103,53 @@ export default defineDynamsoftConfig({
 }
 ```
 
-```jsonc
-// docs/typedoc.json — API reference generation
-{
-	"$schema": "https://typedoc.org/schema.json",
-	// Fleet conventions: markdown + vitepress plugins, out: "api" wiped per
-	// run, no README page, private/internal excluded. Path-type options
-	// (out, docsRoot, basePath, tsconfig, entryPoints) resolve relative to
-	// the file DECLARING them — typedoc resolves an extended config's paths
-	// against its own location inside node_modules — so they must stay here.
-	"extends": ["@dynamsoft-docs/vitepress-docs/typedoc.base.json"],
-	"name": "Your Product API Reference",
-	"entryPoints": ["../src/index.ts"],
-	"tsconfig": "../tsconfig.json",
-	"out": "api",
-	"docsRoot": ".",
-	"basePath": "..",
-}
+```ts
+// docs/typedoc.config.mjs — API reference generation
+import { defineDynamsoftTypedoc } from "@dynamsoft-docs/vitepress-docs/typedoc";
+
+// Fleet conventions: markdown + vitepress plugins, out: "api" wiped per
+// run, no README page, private/internal excluded, plus the source-link
+// revision below. Path-type options (out, docsRoot, basePath, tsconfig,
+// entryPoints) resolve relative to the file DECLARING them, which is this
+// one — so they stay here rather than in the theme.
+export default defineDynamsoftTypedoc({
+	name: "Your Product API Reference",
+	repo: "Dynamsoft/your-product", // builds sourceLinkTemplate
+	entryPoints: ["../src/index.ts"],
+	tsconfig: "../tsconfig.json",
+	out: "api",
+	docsRoot: ".",
+	basePath: "..",
+});
 ```
+
+Keep the config in a `.mjs` file: typedoc prefers a `typedoc.json` over a
+`typedoc.config.mjs` in the same directory, so a leftover JSON config
+silently wins.
+
+### Source links and `gitRevision`
+
+Typedoc takes line numbers from the working tree, then writes them into
+links against whatever `gitRevision` names, and never checks that the two
+are the same code. A hand-written revision that falls behind therefore
+produces links that resolve fine and land in the wrong place — no 404, no
+build error, nothing for a link checker to catch.
+
+So `defineDynamsoftTypedoc` does not write one down. `versions.json`
+already names the branch each version is built from, and that branch is
+the source being documented: `ds-docs-build-versions` passes it as
+`DOCS_BRANCH`, and a plain `npm run api` uses the checked-out branch.
+Nothing has to be kept in step, so nothing can fall behind.
+
+The branch must exist on the repository `repo` names — the public product
+repo, not the internal one. `gitRevision` overrides all of this.
+
+With a `sourceLinkTemplate` in play the factory also sets `disableGit` and
+roots `displayBasePath` at the product: both values typedoc would go to
+git for are already known, and left to find a repository itself it needs
+`.git` to be a directory, finds none, and drops every source link without
+saying so. Link `{path}` is rooted at `displayBasePath`, not `basePath` as
+the option help claims.
 
 Install with `npm install` in the docs package (and in the repo root — the
 API reference is generated from the product's TypeScript source, which
@@ -185,7 +214,9 @@ The `ds-docs-build-versions` bin builds every branch-tracked entry in a
 detached git worktree (created as a sibling of the repo root so `file:`
 dependencies resolve) with its subpath as the base, and assembles the
 results plus the manifest into one tree (default `<repo>/_site`), ready to
-deploy as a whole. `defineDynamsoftConfig` serves the manifest at
+deploy as a whole. Each build also gets its tracked branch as
+`DOCS_BRANCH`, which is where its API reference points its source links
+— so the manifest is the only place a version's branch is named. `defineDynamsoftConfig` serves the manifest at
 `<base>versions.json` in dev and copies it into single builds via
 `buildEnd`.
 

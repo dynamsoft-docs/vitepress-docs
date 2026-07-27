@@ -23,6 +23,7 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./config": "./src/config.js",
+		"./typedoc": "./src/typedoc.js",
 		"./tsconfig.base.json": "./tsconfig.base.json",
 		"./typedoc.base.json": "./typedoc.base.json",
 		"./package.json": "./package.json"
