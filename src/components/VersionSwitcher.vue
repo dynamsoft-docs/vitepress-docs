@@ -36,10 +36,8 @@ async function go(event: Event) {
 	// fetch follows them, and the browser will follow the same one), then
 	// walk up its ancestor directories, so a page without a counterpart
 	// lands on the closest section shared by both versions; the version
-	// root is the last resort. Caveat: the dev server answers 200 for any
-	// live-site path (SPA fallback), so probes are only meaningful against
-	// static versions and production — the header below lets it answer from
-	// the page sources instead; production ignores it.
+	// root is the last resort. In dev the live version answers 200 for any
+	// path (SPA fallback), so switching to it there can land on a 404 page.
 	const samePage = location.pathname.slice((root + current.value).length);
 	const candidates = [samePage + location.hash];
 	for (let dir = samePage.replace(/[^/]*$/, ""); dir; dir = dir.replace(/[^/]*\/$/, "")) {
@@ -47,10 +45,7 @@ async function go(event: Event) {
 	}
 	for (const candidate of candidates) {
 		try {
-			const probe = await fetch(root + path + candidate, {
-				method: "HEAD",
-				headers: { "x-ds-probe": "1" },
-			});
+			const probe = await fetch(root + path + candidate, { method: "HEAD" });
 			if (probe.ok) {
 				location.href = root + path + candidate;
 				return;

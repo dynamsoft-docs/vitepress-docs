@@ -46,6 +46,7 @@ const MIME = /** @type {Record<string, string>} */ ({
  */
 const versionsPlugin = (base, docsRoot) => ({
 	name: "ds-versions",
+	apply: "serve",
 	configureServer(server) {
 		const root = server.config.root;
 		/** `ds-docs-build-versions` assembles into the repository root. */
@@ -79,28 +80,7 @@ const versionsPlugin = (base, docsRoot) => ({
 			const hit = versions.find(
 				(v) => v.path && `${docsRoot}${v.path}` !== base && url.startsWith(`${docsRoot}${v.path}`),
 			);
-			if (!hit) {
-				// Live-site probe from the version switcher: the dev server
-				// answers 200 for any path (SPA fallback), so probes carry a
-				// header and are answered from the page sources instead.
-				// Static versions and production give real statuses anyway.
-				if (req.method === "HEAD" && req.headers["x-ds-probe"] && url.startsWith(base)) {
-					const rest = decodeURIComponent(url.slice(base.length));
-					const page =
-						rest === "" || rest.endsWith("/") ? `${rest}index.md` : rest.replace(/\.html$/, ".md");
-					// Raw paths must be files: a bare directory without an index
-					// page would 404 on the static servers this probe stands in
-					// for, so a directory hit here would be a false positive.
-					const isFile = (/** @type {string} */ p) => existsSync(p) && statSync(p).isFile();
-					const ok =
-						existsSync(join(root, page)) ||
-						isFile(join(root, rest)) ||
-						isFile(join(root, "public", rest));
-					res.statusCode = ok ? 200 : 404;
-					return res.end();
-				}
-				return next();
-			}
+			if (!hit) return next();
 
 			let file = resolve(siteTree, url.slice(docsRoot.length));
 			if (!file.startsWith(siteTree + sep)) return next();
