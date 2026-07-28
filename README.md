@@ -31,6 +31,13 @@ of the default VitePress theme).
 	(see Versioning below).
 - **Comm100 live chat** — fleet-wide site/plan defaults, overridable via
 	`themeConfig.comm100`.
+- **Google Tag Manager** — the fleet container, overridable via
+	`themeConfig.gtm`, wired only when `dynamsoftChrome` is set. The stock
+	loader snippet is a `head` entry; only the `noscript` half is a
+	component, since a visitor without scripting cannot run an injector.
+	VitePress routes on the client, so only the first page of a visit trips
+	the container's All Pages trigger; in-site navigation needs an event the
+	container listens for.
 - **Brand accents** — Dynamsoft orange for nav/sidebar highlights.
 - **Config defaults** — `defineDynamsoftConfig` (the `./config` export)
 	wraps a site's VitePress config with the fleet-wide mechanics: versioned

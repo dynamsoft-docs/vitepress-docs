@@ -5,6 +5,7 @@ import Breadcrumbs from "./components/Breadcrumbs.vue";
 import Comm100Chat from "./components/Comm100Chat.vue";
 import CorporateFooter from "./components/CorporateFooter.vue";
 import CorporateHeader from "./components/CorporateHeader.vue";
+import GoogleTagManager from "./components/GoogleTagManager.vue";
 import VersionSwitcher from "./components/VersionSwitcher.vue";
 
 const { theme } = useData();
@@ -24,6 +25,7 @@ const { theme } = useData();
 		<template #layout-bottom>
 			<CorporateFooter v-if="theme.dynamsoftChrome" />
 			<Comm100Chat v-if="theme.dynamsoftChrome" />
+			<GoogleTagManager v-if="theme.dynamsoftChrome" />
 		</template>
 	</VPTheme.Layout>
 </template>

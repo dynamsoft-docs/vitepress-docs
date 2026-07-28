@@ -20,6 +20,8 @@ export interface DynamsoftThemeConfig extends DefaultTheme.Config {
 	breadcrumbLabels?: Record<string, string>;
 	/** Comm100 live-chat overrides; the fleet-wide site/plan is the default. */
 	comm100?: { siteId?: number; planId?: string };
+	/** Google Tag Manager container; the fleet-wide container is the default. */
+	gtm?: string;
 }
 
 export default {
