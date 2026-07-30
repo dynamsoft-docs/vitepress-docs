@@ -114,8 +114,8 @@ const versionsPlugin = (base, docsRoot) => ({
  * - A sitemap is generated for www.dynamsoft.com and the corporate favicon
  *   is set; a site-provided `sitemap` wins, site `head` entries append.
  *
- * @param {import("vitepress").UserConfig<import("./index.js").DynamsoftThemeConfig>} config
- * @returns {import("vitepress").UserConfig<import("./index.js").DynamsoftThemeConfig>}
+ * @param {import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>} config
+ * @returns {import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>}
  */
 export function defineDynamsoftConfig(config) {
 	const version = process.env.DOCS_VERSION?.replace(/^\/+|\/+$/g, "") ?? "";

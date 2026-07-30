@@ -13,6 +13,7 @@
 	},
 	"files": [
 		"src",
+		"types",
 		"tsconfig.base.json",
 		"typedoc.base.json",
 		"README.md"
@@ -22,8 +23,14 @@
 	"types": "./src/index.ts",
 	"exports": {
 		".": "./src/index.ts",
-		"./config": "./src/config.js",
-		"./typedoc": "./src/typedoc.js",
+		"./config": {
+			"types": "./types/config.d.mts",
+			"default": "./src/config.mjs"
+		},
+		"./typedoc": {
+			"types": "./types/typedoc.d.mts",
+			"default": "./src/typedoc.mjs"
+		},
 		"./tsconfig.base.json": "./tsconfig.base.json",
 		"./typedoc.base.json": "./typedoc.base.json",
 		"./package.json": "./package.json"
@@ -31,6 +38,7 @@
 	"scripts": {
 		"sync-chrome": "node scripts/sync-chrome.mts",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"types": "tsc -p tsconfig.dts.json",
 		"lint": "vp lint",
 		"fmt": "vp fmt",
 		"check": "vp check"

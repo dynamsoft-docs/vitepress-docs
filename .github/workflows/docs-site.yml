@@ -60,26 +60,19 @@ jobs:
           fetch-depth: 0
 
       # Installs Vite+, Node, and the package manager, with dependency
-      # caching (vp docs → Continuous Integration).
-      - name: Set up Vite+
+      # cached install for SDK root first (needed for typedoc generation)
+      # then for docs
+      - name: Set up Vite+ and install
         uses: voidzero-dev/setup-vp@v1
         with:
           node-version-file: package.json
           cache: true
+          run-install: |
+            - args: ["--frozen-lockfile"]
+            - cwd: ./${{ inputs.docs-dir }}
+              args: ["--frozen-lockfile"]
 
       # --- deploy: false — fast verification build of the current ref ---
-      # Root install first: the API reference is typedoc-generated from the
-      # product source, which resolves types from the root node_modules
-      # (README → Setting up a docs site).
-      - name: Install SDK dependencies
-        if: ${{ !inputs.deploy }}
-        run: vp install
-
-      - name: Install docs dependencies
-        if: ${{ !inputs.deploy }}
-        run: vp install
-        working-directory: ${{ inputs.docs-dir }}
-
       # The docs build script still invokes the `vitepress` CLI directly:
       # `vp doc` is not shipped in vite-plus 0.2.6 (the command exists but
       # dist/vitepress is absent) — see README → TODO.
@@ -109,11 +102,6 @@ jobs:
       - name: Create local refs for tracked branches
         if: ${{ inputs.deploy }}
         run: git fetch --update-head-ok origin '+refs/heads/*:refs/heads/*'
-
-      - name: Install docs dependencies (deploy)
-        if: ${{ inputs.deploy }}
-        run: vp install
-        working-directory: ${{ inputs.docs-dir }}
 
       - name: Build all designated versions
         if: ${{ inputs.deploy }}

@@ -1,0 +1,12 @@
+// Declarations for the config factories, generated from their JSDoc (npm run
+// types). Emitted to types/, not src/, so nothing shadows the source.
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"noEmit": false,
+		"declaration": true,
+		"emitDeclarationOnly": true,
+		"declarationDir": "types"
+	},
+	"include": ["env.d.ts", "src/config.mjs", "src/typedoc.mjs"]
+}

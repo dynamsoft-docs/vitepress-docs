@@ -37,7 +37,7 @@ function revision(repoRoot) {
  * Path-type options (out, docsRoot, basePath, tsconfig, entryPoints)
  * resolve against the caller's typedoc.config.mjs.
  *
- * @param {import("./typedoc.js").DynamsoftTypedocConfig} [config]
+ * @param {import("./types.js").DynamsoftTypedocConfig} [config]
  * @returns {Record<string, unknown>}
  */
 export function defineDynamsoftTypedoc(config = {}) {

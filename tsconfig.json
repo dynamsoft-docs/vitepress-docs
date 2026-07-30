@@ -4,8 +4,8 @@
 		"env.d.ts",
 		"src/**/*.ts",
 		"src/**/*.vue",
-		"src/config.js",
-		"src/typedoc.js",
+		"src/config.mjs",
+		"src/typedoc.mjs",
 		"scripts/**/*.mjs",
 		"scripts/**/*.mts"
 	]

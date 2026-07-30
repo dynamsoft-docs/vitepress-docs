@@ -1,0 +1,50 @@
+# Checks for this package itself. docs-site.yml is the separate reusable
+# build/deploy job that consuming docs sites call.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**/*.md"]
+  pull_request:
+    paths-ignore: ["**/*.md"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # Installs Vite+, Node, and the package manager at the versions pinned
+      # in package.json devEngines.
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version-file: package.json
+          cache: true
+          run-install: |
+            - args: ["--frozen-lockfile"]
+
+      - name: Format and lint
+        run: vp check
+
+      - name: Typecheck
+        run: vp run typecheck
+
+      # types/ is committed so installs stay build-free; fail if it has drifted.
+      - name: Verify generated declarations are current
+        run: |
+          vp run types
+          if [ -n "$(git status --porcelain -- types)" ]; then
+            git status --short -- types
+            echo "::error::types/ is stale — run 'npm run types' and commit the result"
+            exit 1
+          fi

@@ -52,6 +52,15 @@ of the default VitePress theme).
 The package ships TypeScript/Vue source (no build step); the consuming
 site's VitePress compiles it.
 
+`src/config.mjs` and `src/typedoc.mjs` are deliberately not TypeScript: they
+are the only files bare Node executes (VitePress externalizes bare specifiers
+when loading a site's config; typedoc loads `typedoc.config.mjs` the same
+way), and Node refuses to strip types inside `node_modules`, so a TypeScript
+factory would work in a linked checkout and fail on every git-dependency
+install. Their JSDoc is the source of the shipped declarations: `npm run
+types` generates `types/`, committed so installs stay build-free and
+CI-checked for staleness. Public types live in `src/types.ts`.
+
 ## Setting up a docs site
 
 ```jsonc

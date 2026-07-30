@@ -1,0 +1,27 @@
+import type { DefaultTheme } from "vitepress";
+/** Theme config consumed via `defineConfigWithTheme<DynamsoftThemeConfig>`. */
+export interface DynamsoftThemeConfig extends DefaultTheme.Config {
+    /** Site root of the "latest" docs for this product; respect copy of versions.json here. */
+    docsRoot: string;
+    /** Render the Dynamsoft corporate header/footer. */
+    dynamsoftChrome: boolean;
+    /** Breadcrumb labels per path directory, e.g. { api: "API Reference" }. */
+    breadcrumbLabels?: Record<string, string>;
+    /** Comm100 live-chat overrides; the fleet-wide site/plan is the default. */
+    comm100?: {
+        siteId?: number;
+        planId?: string;
+    };
+    /** Google Tag Manager container; the fleet-wide container is the default. */
+    gtm?: string;
+}
+/**
+ * A docs package's typedoc options, plus the one fleet-specific key
+ * `defineDynamsoftTypedoc` consumes rather than forwards. Typedoc's own
+ * option types are not imported: this package does not depend on typedoc.
+ */
+export interface DynamsoftTypedocConfig {
+    /** `owner/name` of the GitHub repository source links point at. */
+    repo?: string;
+    [option: string]: unknown;
+}
