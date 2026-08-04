@@ -63,7 +63,7 @@ jobs:
       # cached install for SDK root first (needed for typedoc generation)
       # then for docs
       - name: Set up Vite+ and install
-        uses: voidzero-dev/setup-vp@v1
+        uses: voidzero-dev/setup-vp@v1.16.1
         with:
           node-version-file: package.json
           cache: true

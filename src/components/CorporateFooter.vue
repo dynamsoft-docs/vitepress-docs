@@ -7,5 +7,7 @@ const footer = computed(() => footerHtml.replaceAll("%%YEAR%%", String(new Date(
 </script>
 
 <template>
-	<div class="ds-corporate ds-corporate-footer" v-html="footer" />
+	<!-- Keeps the VitePress router from intercepting the corporate
+		links that would otherwise SPA-navigate to the docs base -->
+	<div class="ds-corporate ds-corporate-footer vp-raw" v-html="footer" />
 </template>

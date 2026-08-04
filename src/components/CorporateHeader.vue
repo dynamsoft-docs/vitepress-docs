@@ -5,6 +5,16 @@ import "../chrome/chrome.css";
 
 const host = ref<HTMLElement | null>(null);
 
+// The corporate layout.js binds the visitor block's "Log in" control to its
+// sign-in flyout, so the vendored markup ships a dead `href="#"` (the live
+// corporate header does too). Point it at the customer portal login instead.
+const LOGIN_URL = "https://www.dynamsoft.com/api-common/Login/Login";
+
+function wireLogin() {
+	const links = host.value?.querySelectorAll<HTMLAnchorElement>('.header-visitor a[href="#"]');
+	for (const link of links ?? []) link.href = LOGIN_URL;
+}
+
 // Menu toggle class → dropdown panel id, standing in for the corporate
 // layout.js (which is not vendored).
 const PANELS: Record<string, string> = {
@@ -63,6 +73,7 @@ function onScroll() {
 }
 
 onMounted(() => {
+	wireLogin();
 	document.addEventListener("click", closeAll);
 	document.addEventListener("keydown", onKey);
 	window.addEventListener("scroll", onScroll, { passive: true });
@@ -85,9 +96,11 @@ onUnmounted(() => {
 </script>
 
 <template>
+	<!-- Keeps the VitePress router from intercepting the corporate
+		links that would otherwise SPA-navigate to the docs base -->
 	<div
 		ref="host"
-		class="ds-corporate ds-corporate-header"
+		class="ds-corporate ds-corporate-header vp-raw"
 		v-html="headerHtml"
 		@click="onHostClick"
 	/>
