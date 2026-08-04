@@ -167,6 +167,8 @@ export function defineDynamsoftConfig(config) {
 			outline: [2, 3],
 			externalLinkIcon: true,
 			...config.themeConfig,
+			docsRoot,
+			dynamsoftChrome: config.themeConfig?.dynamsoftChrome ?? false,
 			...(gtm ? { gtm } : {}),
 		},
 		markdown: {

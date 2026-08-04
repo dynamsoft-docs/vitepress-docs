@@ -108,7 +108,9 @@
 	background-color: var(--ds-doc-soft);
 }
 
-/* GFM alerts keep stock VitePress styling — revert the skin inside them. */
+/* VitePress ::: containers keep stock styling — revert the skin inside them.
+   GFM alerts are not these: markdown-it-github-alerts renders .markdown-alert,
+   styled by the github-*.css imported in src/index.ts. */
 .vp-doc .custom-block a {
 	color: inherit;
 }

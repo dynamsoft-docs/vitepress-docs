@@ -6,6 +6,7 @@
 		"noEmit": false,
 		"declaration": true,
 		"emitDeclarationOnly": true,
+		"rootDir": "src",
 		"declarationDir": "types"
 	},
 	"include": ["env.d.ts", "src/config.mjs", "src/typedoc.mjs"]
