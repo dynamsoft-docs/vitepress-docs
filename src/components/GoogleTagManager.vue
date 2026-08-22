@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useData } from "vitepress";
 
-// The loader is a head script wired by defineDynamsoftConfig, which also
-// resolves the container. Only the noscript half needs to be markup: a
-// visitor without scripting cannot run an injector.
+// defineDynamsoftConfig adds the loader script and picks the container. Only
+// the noscript half has to be markup — a visitor without scripting cannot run
+// an injector.
 const { theme } = useData();
 const iframe = `<iframe src="https://www.googletagmanager.com/ns.html?id=${theme.value.gtm}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
 </script>

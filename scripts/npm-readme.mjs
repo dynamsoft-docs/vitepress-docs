@@ -1,18 +1,15 @@
 #!/usr/bin/env node
 /**
- * Generate an npm-renderable README generated from a docs-site guide page.
+ * Turn a docs-site guide page into a README npm can render.
  *
- * npm renders neither site-relative links nor GFM alert admonitions, so
- * this drops any leading HTML comment (authoring note) and YAML frontmatter,
- * absolutizes site-relative links against the given production site root
- * (mapping `.md` source paths to the published `.html` pages), and
- * downgrades GFM alert markers (`> [!NOTE]` etc.) to plain bold
- * blockquotes (`> **Note**`).
+ * npm handles neither site-relative links nor GFM alerts, so this drops the
+ * leading authoring comment and frontmatter, points the links at the published
+ * pages under the given site root, and downgrades alert markers
+ * (`> [!NOTE]`) to bold blockquotes.
  *
- * Meant to run in a product repo's publish workflow just before `npm pack`,
- * overwriting README.md in the CI workspace only — a generated README
- * should never be tracked in git. Dependency-free, so it also runs with
- * plain `node` straight from a checkout of this repo.
+ * Meant for a publish workflow, just before `npm pack`, overwriting README.md
+ * in the CI workspace — a generated README should not be committed. It has no
+ * dependencies, so plain `node` can run it from a checkout.
  *
  * Usage: ds-docs-npm-readme <guide.md> --site <https://…/docs/web/>
  */

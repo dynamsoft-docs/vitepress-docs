@@ -5,19 +5,16 @@
 	--vp-c-brand-3: #d96f00;
 	--vp-c-brand-soft: rgba(254, 142, 20, 0.14);
 
-	/* Pre-hydration estimate of the corporate header height; the header
-	   component measures the real value after mount. */
+	/* Estimate until the header component measures the real height. */
 	--ds-header-height: 72px;
 }
 
-/* Hand the header height to VitePress — the default theme offsets its nav,
-   sidebar, and content paddings by --vp-layout-top-height. */
+/* VitePress offsets its nav, sidebar and content by this. */
 :root:has(.ds-corporate-header) {
 	--vp-layout-top-height: var(--ds-header-height);
 }
 
-/* The header scrolls away (transform driven by the scroll handler) while
-   the VitePress nav bar docks at the viewport top. */
+/* The header scrolls away while the VitePress nav bar stays docked. */
 .ds-corporate-header {
 	position: fixed;
 	top: 0;
@@ -27,11 +24,9 @@
 	transform: translateY(var(--ds-header-offset, 0));
 }
 
-/* Revealing one of the two account blocks is the corporate session JS's job;
-   the header component does it here instead, marking the host .ds-signed-in
-   once it has read the corporate session (see CorporateHeader.vue). Logged out
-   is the default, so a reader with no session — or one whose session lookup is
-   still in flight, or who has JS disabled — gets the "Log in" block. */
+/* One of the two account blocks shows at a time. CorporateHeader.vue marks
+   the host .ds-signed-in once it has read the corporate session; logged out is
+   the default, so that is what a reader without one sees. */
 .ds-corporate .header-signin {
 	display: none !important;
 }
@@ -48,17 +43,15 @@
 	display: none !important;
 }
 
-/* The narrow-screen hamburger and search toggles need the corporate
-   layout.js; hide them rather than ship dead controls. */
+/* Nothing here drives these two, so hide them rather than ship dead
+   controls. */
 .ds-corporate .xsMenuToggle,
 .ds-corporate #xsHeader .search-icon {
 	display: none !important;
 }
 
-/* The corporate layout.js slides menus open (jQuery slideDown); approximate
-   the vertical settle whenever a panel is re-shown by the interaction shim.
-   margin-top is animated instead of transform so panel positioning is never
-   disturbed. */
+/* Stands in for the slide-open the corporate site animates. margin-top rather
+   than transform, so the panel's position is never disturbed. */
 @keyframes ds-menu-open {
 	from {
 		opacity: 0;
@@ -75,31 +68,26 @@
 	animation: ds-menu-open 0.2s ease;
 }
 
-/* z-index lifts the footer over the fixed sidebar so it spans the full
-   width when scrolled into view. */
+/* Lift the footer over the fixed sidebar so it spans the full width. */
 .ds-corporate-footer {
 	position: relative;
 	z-index: 60;
 }
 
-/* The corporate back-to-top button stays display:none until the corporate
-   layout.js reveals it past the fold; CorporateFooter.vue marks the host
-   instead (it also does the scrolling). */
+/* CorporateFooter.vue marks the host once the reader is past the fold. */
 .ds-corporate-footer.ds-past-fold #toTop {
 	display: block;
 }
 
-/* The nav bar is the docs banner: breadcrumbs left; search, download, and
-   theme switcher right. VitePress reserves its title column as the sidebar
-   header and lets search grow into the middle — collapse both so the row
-   reads left-to-right (!important beats the theme's scoped [data-v]
-   selectors). */
+/* The nav bar is the docs banner: breadcrumbs left, then search, download and
+   the theme switcher on the right. VitePress reserves the title column and
+   lets search grow into the middle; collapse both. (!important beats the
+   theme's scoped selectors.) */
 .VPNavBar .title {
 	display: none !important;
 }
 
-/* Defeat the --vp-layout-max-width centering: full-bleed banner with a
-   fixed 24px inset on both sides at every viewport width. */
+/* Full-bleed banner with a fixed inset, rather than the centred max-width. */
 .VPNavBar .container {
 	max-width: 100% !important;
 }
@@ -109,23 +97,20 @@
 	padding-right: 24px !important;
 }
 
-/* VitePress paints the banner background on the inner content-body and
-   insets its bottom divider by the sidebar width; extend both to the full
-   viewport width. */
+/* VitePress paints this on the inner content-body; extend it full width. */
 .VPNavBar,
 .VPNavBar .content-body {
 	background-color: var(--vp-nav-bg-color) !important;
 }
 
-/* Corporate grey header in dark mode: the vendored cascade paints the
-   desktop header white (#mdHeader{background:#fff}); flip the surface, the
-   logo, and the menu text (scoped rules carry no !important, so these win). */
+/* The vendored cascade paints the desktop header white; in dark mode flip the
+   surface, the logo and the menu text. */
 .dark .ds-corporate #mdHeader {
 	background: #323232 !important;
 }
 
-/* The wrapper can be a hair taller than #mdHeader's 72px; paint the whole
-   fixed header surface so no white sliver shows at its bottom edge. */
+/* The wrapper can be a hair taller than the header, which would leave a white
+   sliver along its bottom edge. */
 .dark .ds-corporate-header {
 	background: #323232;
 }
@@ -169,12 +154,10 @@
 	color: #fff !important;
 }
 
-/* API-reference entries are single long identifiers (typedoc names like
-   DocumentResultViewToolbarButtonsConfig) with no break opportunity of their
-   own, so they overrun their fixed-width column and are clipped at its edge
-   (the sidebar sets overflow-x: hidden). loadApiSidebar marks the word
-   boundaries inside the sidebar's own entries and breaks land there; this is
-   the fallback for a name without one — mid-word beats clipped. */
+/* An API name like DocumentResultViewToolbarButtonsConfig is a single word
+   wider than its column, and the sidebar clips at its edge. loadApiSidebar
+   marks the word boundaries in sidebar entries and breaks land there; this is
+   the fallback for a name without one, where mid-word beats clipped. */
 .VPSidebarItem .text,
 .VPDocAside .outline-link {
 	overflow-wrap: anywhere;

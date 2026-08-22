@@ -4,7 +4,7 @@ import { useData } from "vitepress";
 
 const { theme } = useData();
 
-// Fleet-wide defaults from Docs-Template-Repo's livehelp.html.
+// Defaults from Docs-Template-Repo's livehelp.html.
 const DEFAULTS = { siteId: 90003305, planId: "20242b05-3781-4d86-9b7f-fab63ddcdde3" };
 
 onMounted(() => {

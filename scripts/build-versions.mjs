@@ -1,15 +1,13 @@
 #!/usr/bin/env node
 /**
- * Build every version designated in the docs version manifest.
+ * Build every version the docs version manifest designates.
  *
- * Run from a docs package directory (the one holding .vitepress/). Reads
- * versions.json: entries carrying a "branch" are built from that
- * branch in a detached git worktree, with DOCS_VERSION set from their
- * "path" so the theme's config factory derives the versioned base. The
- * outputs are assembled under --out together with the manifest itself,
- * ready to serve or FTP-sync as one tree. Entries without a "branch" are
- * listed in the version switcher but not built (frozen copies that live
- * only on the server).
+ * Run it from a docs package directory. Each entry in versions.json with a
+ * "branch" is built from that branch in a detached git worktree, with
+ * DOCS_VERSION set from its "path" so the config factory derives the versioned
+ * base. The builds are assembled under --out alongside the manifest, ready to
+ * serve or FTP-sync as one tree. Entries without a "branch" appear in the
+ * version switcher but are not built: those copies only exist on the server.
  *
  * Usage: ds-docs-build-versions [--manifest versions.json] [--out <repo>/_site]
  */
@@ -95,6 +93,6 @@ for (const [i, version] of tracked.entries()) {
 	}
 }
 
-// The manifest of the invoking checkout is authoritative for every version.
+// The invoking checkout's manifest is the one every version gets.
 cpSync(manifestFile, join(outDir, "versions.json"));
 console.log(`\nAssembled ${tracked.length} version(s) into ${outDir}`);

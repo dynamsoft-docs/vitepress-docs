@@ -1,27 +1,19 @@
 /**
- * Wrap a docs site's VitePress config with the fleet-wide Dynamsoft
- * defaults; site-provided values extend or override them.
+ * Wrap a docs site's VitePress config with the Dynamsoft defaults. Anything
+ * the site sets wins, and its `head` entries are appended to ours.
  *
- * - The dev server may read this theme's checkout (file:-linked installs
- *   resolve imports from the real path, outside the site root) and binds
- *   all interfaces (fleet docs dev happens in containers behind proxied
- *   interfaces).
- * - vue/vitepress are deduped and the theme is added to `ssr.noExternal`:
- *   the theme ships TypeScript/Vue source, so its peer imports must resolve
- *   to the site's single instances (vital for file:/linked installs) and it
- *   must be bundled, not externalized, when installed from a registry.
- * - A sitemap is generated for www.dynamsoft.com and the corporate favicon
- *   is set; a site-provided `sitemap` wins, site `head` entries append.
- *
+ * The vite settings are the fiddly part. This theme ships TypeScript and Vue
+ * source, so it has to be bundled rather than externalized, and vue and
+ * vitepress are deduped — otherwise a `file:`-linked checkout ends up with a
+ * second copy of each and the site silently falls back to the default theme.
  * @param {import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>} config
  * @returns {import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>}
  */
 export declare function defineDynamsoftConfig(config: import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>): import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>;
 /**
- * Load API references into the side bar instead of in the header like the default.
- *
- * @param {string} [docsDir] docs package directory (defaults to the cwd,
- *   which is where VitePress runs config from)
+ * The generated API reference, for the sidebar rather than the nav.
+ * @param {string} [docsDir] docs package directory; defaults to the cwd,
+ *   which is where VitePress runs a config from
  * @returns {import("vitepress").DefaultTheme.SidebarItem[]}
  */
 export declare function loadApiSidebar(docsDir?: string): import("vitepress").DefaultTheme.SidebarItem[];

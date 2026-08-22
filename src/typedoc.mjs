@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const themeRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
- * The branch being documented: the one versions.json tracks for this
- * build, passed by ds-docs-build-versions, or the checked-out branch.
+ * The branch being documented: the one ds-docs-build-versions passes in, or
+ * whichever is checked out.
  * @param {string} repoRoot
  * @returns {string}
  */
@@ -27,16 +27,13 @@ function revision(repoRoot) {
 }
 
 /**
- * Wrap a docs package's typedoc config with the fleet-wide Dynamsoft
- * defaults; site-provided values override them.
+ * Wrap a docs package's typedoc config with the Dynamsoft defaults; anything
+ * the package sets overrides them.
  *
- * Source links point at the branch being documented, which versions.json
- * already names, so nothing has to be kept in step with the source. That
- * branch must exist on the repository `repo` names.
- *
- * Path-type options (out, docsRoot, basePath, tsconfig, entryPoints)
- * resolve against the caller's typedoc.config.mjs.
- *
+ * Source links follow the branch being documented, which versions.json already
+ * names — so nothing here has to be kept in step with the source. That branch
+ * has to exist on the repository `repo` names. Path options resolve against
+ * the caller's typedoc.config.mjs.
  * @param {import("./types.js").DynamsoftTypedocConfig} [config]
  * @returns {Record<string, unknown>}
  */
@@ -59,10 +56,10 @@ export function defineDynamsoftTypedoc(config = {}) {
 	delete base.$schema;
 	return {
 		...base,
-		// Both values typedoc would go to git for are known, and left to
-		// look for a repository itself it needs `.git` to be a directory,
-		// finds none, and drops every source link without saying so. Link
-		// {path} is rooted at displayBasePath, not basePath as the help says.
+		// We know both values typedoc would otherwise ask git for, and it needs
+		// `.git` to be a directory: in a worktree it finds a file, then drops
+		// every source link without a word. {path} is rooted at
+		// displayBasePath, not basePath as the help says.
 		...(sourceLinkTemplate === undefined
 			? {}
 			: { sourceLinkTemplate, disableGit: true, displayBasePath: repoRoot }),

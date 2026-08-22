@@ -5,33 +5,29 @@ import "../chrome/chrome.css";
 
 const host = ref<HTMLElement | null>(null);
 
-// The corporate layout.js binds the visitor block's "Log in" control to its
-// sign-in flyout, so the vendored markup ships a dead `href="#"` (the live
-// corporate header does too). Point it at the customer portal login, carrying
-// the same `callback` the corporate header.min.js sends so signing in returns
-// to the page the reader left. GLOBAL.SiteRoot per the corporate site.min.js.
+// The vendored "Log in" control ships a dead `href="#"`, because on the
+// corporate site its own JS opens a sign-in flyout. Send it to the customer
+// portal instead, with a callback so signing in returns to this page.
 const SITE_ROOT = "https://www.dynamsoft.com/api-common";
 
 const loginHref = () =>
 	`${SITE_ROOT}/Login/Login?callback=${encodeURIComponent(window.location.href)}`;
 
-// The header mounts once and survives SPA route changes, so a mount-time
-// callback goes stale; onHostClick refreshes it as the click is dispatched.
+// The header outlives route changes, so the callback is stamped on at click
+// time rather than on mount.
 function wireLogin() {
 	const links = host.value?.querySelectorAll<HTMLAnchorElement>(".header-visitor a");
 	for (const link of links ?? []) link.href = loginHref();
 }
 
 // ── Corporate session ────────────────────────────────────────────────────
-// In production the docs are served from www.dynamsoft.com, so the corporate
-// session is readable here. This mirrors the corporate header.min.js: gate on
-// the token cookie, take the display name from localStorage["user"] (which the
-// corporate site fills from Api/User/Info), fall back to that API when the
-// store is cold, then render initials. Corporate-owned storage is only ever
-// read, never written — the corporate pages own its shape.
+// The docs are served from www.dynamsoft.com, so the corporate session is
+// readable here: check the token cookie, take the name from the profile the
+// corporate site caches, ask the portal if nothing is cached, show initials.
+// That storage is only ever read — the corporate pages own its shape.
 const COOKIE_DOMAIN = "dynamsoft.com";
 const TOKEN_COOKIE = "DynamsoftTokenBackup";
-/** Everything the corporate logout clears (site.min.js D_CookieName + authMethod). */
+/** The cookies a corporate logout clears. */
 const SESSION_COOKIES = [
 	"DynamsoftEmail",
 	"DynamsoftRole",
@@ -60,7 +56,7 @@ function isSignedIn() {
 	return !!token && token !== "null";
 }
 
-/** First letter of each word, or the first two of a single one — header.min.js. */
+/** First letter of each word, or the first two letters of a single one. */
 function initials(name: string) {
 	const first = name.charAt(0);
 	if (!first) return "AN";
@@ -69,7 +65,7 @@ function initials(name: string) {
 	return words.length > 1 ? words.map((word) => word.charAt(0)).join("") : first + name.charAt(1);
 }
 
-/** The corporate store, honouring the expiry stamp it writes alongside. */
+/** The cached profile, unless the expiry stamped on it has passed. */
 function storedName() {
 	try {
 		const raw = localStorage.getItem("user");
@@ -82,7 +78,7 @@ function storedName() {
 	}
 }
 
-/** The same call the corporate header makes when its store is cold. */
+/** Ask the portal for the profile when nothing is cached. */
 async function fetchName() {
 	try {
 		const response = await fetch(`${SITE_ROOT}/Api/User/Info`, {
@@ -94,23 +90,22 @@ async function fetchName() {
 		if (body?.code !== 0) return "";
 		return `${body.data?.firstName ?? ""} ${body.data?.lastName ?? ""}`.trim();
 	} catch {
-		// Cross-origin during local dev, or the network refused: stay logged out.
+		// Cross-origin in local dev, or the network refused: stay logged out.
 		return "";
 	}
 }
 
 async function applySession() {
 	if (!isSignedIn()) return;
-	// No profile means no session to show — the corporate header bails here too
-	// rather than reveal an empty userbox.
+	// No profile, no session worth showing: an empty avatar is worse than the
+	// logged-out state.
 	const name = storedName() || (await fetchName());
 	if (!name) return;
-	// Two account blocks ship in the markup (wide and narrow headers) and the
-	// corporate JS fills both; missing one leaves an empty avatar circle.
+	// The markup carries an account block per header width; fill both.
 	const labels = host.value?.querySelectorAll<HTMLElement>(".header-signin .username");
 	for (const label of labels ?? []) label.textContent = initials(name);
-	// The vendored "Log out" calls a global that came from the corporate
-	// layout.js; hand those clicks to onHostClick instead.
+	// The vendored "Log out" calls a global that does not exist here; send
+	// those clicks to onHostClick instead.
 	const outs = host.value?.querySelectorAll<HTMLAnchorElement>(".userbox-more a[onclick]");
 	for (const out of outs ?? []) {
 		out.removeAttribute("onclick");
@@ -140,8 +135,7 @@ async function logout() {
 	window.location.href = loginHref();
 }
 
-// Menu toggle class → dropdown panel id, standing in for the corporate
-// layout.js (which is not vendored).
+// Menu toggle class → the panel it opens.
 const PANELS: Record<string, string> = {
 	proMenu: "subMenu",
 	demoMenu: "demoSubMenu",
@@ -163,10 +157,9 @@ function setPanel(id: string | null) {
 	}
 }
 
-// The signed-in account popup is display:none with nothing but the corporate
-// JS to reveal it, so its entries (trial licence, downloads, orders, team,
-// sales portal, log out) would be unreachable once applySession reveals the
-// userbox. Toggle it here, like the menu panels.
+// The account popup is display:none until something reveals it, and only the
+// corporate JS ever did — so its entries would be unreachable. Toggle it the
+// same way as the menu panels.
 function closeUserboxes() {
 	for (const popup of host.value?.querySelectorAll<HTMLElement>(".userbox-more") ?? []) {
 		popup.style.display = "none";
@@ -186,7 +179,6 @@ function onHostClick(event: Event) {
 		void logout();
 		return;
 	}
-	// Re-stamp the login callback with the route the reader is actually on.
 	if ((event.target as HTMLElement).closest?.(".header-visitor a")) return wireLogin();
 	// The avatar, but not the links inside the popup it opens.
 	const box = (event.target as HTMLElement).closest?.(".userbox");
@@ -213,9 +205,8 @@ function onKey(event: KeyboardEvent) {
 	if (event.key === "Escape") closeAll();
 }
 
-// The corporate header scrolls away with the page while the VitePress nav
-// bar — offset by --vp-layout-top-height — docks at the viewport top. The
-// header height is responsive, so measure it.
+// The corporate header scrolls away with the page while the VitePress nav bar
+// stays docked at the top. The header height is responsive, so measure it.
 let height = 0;
 let raf = 0;
 let observer: ResizeObserver | undefined;
@@ -255,11 +246,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<!-- vp-raw opts the subtree out of the VitePress router's click
-		handler. The docs are served from www.dynamsoft.com, so every
-		corporate link is same-origin: without this the router swallows the
-		click, pushes the URL, finds no page in this site and renders its own
-		404 — the target page only appears on a manual refresh. -->
+	<!-- vp-raw keeps the VitePress router out of this subtree. The docs are
+		served from www.dynamsoft.com, so every corporate link is same-origin:
+		without it the router swallows the click and renders this site's 404 at
+		the corporate URL, and only a refresh gets the reader there. -->
 	<div
 		ref="host"
 		class="ds-corporate ds-corporate-header vp-raw"

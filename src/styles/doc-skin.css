@@ -1,11 +1,10 @@
 /*
- * Content-area skin approximating the original Jekyll docs, which style the
- * article body GitHub-markdown-style in OpenSans. Values are lifted from the
- * fleet's basis.css; dark-mode equivalents fall back to VitePress palette.
+ * Article styling in the shape of the older Jekyll docs: GitHub-flavoured
+ * markdown in OpenSans. Values come from the corporate basis.css; dark mode
+ * falls back to the VitePress palette.
  */
 
-/* Shared corporate copies (max-age=86400); GitHub raw serves fonts with
-   max-age=300, which made every fresh visit fall back to system fonts. */
+/* Served from the corporate host, which caches for a day. */
 @font-face {
 	font-family: OpenSans-Regular;
 	src: url(https://www.dynamsoft.com/webres/wwwroot/font-face/OpenSans-Regular.woff) format("woff");
@@ -108,9 +107,9 @@
 	background-color: var(--ds-doc-soft);
 }
 
-/* VitePress ::: containers keep stock styling — revert the skin inside them.
-   GFM alerts are not these: markdown-it-github-alerts renders .markdown-alert,
-   styled by the github-*.css imported in src/index.ts. */
+/* VitePress ::: containers keep their stock styling. GFM alerts are separate:
+   markdown-it-github-alerts renders .markdown-alert, styled by the github-*.css
+   that src/index.ts imports. */
 .vp-doc .custom-block a {
 	color: inherit;
 }

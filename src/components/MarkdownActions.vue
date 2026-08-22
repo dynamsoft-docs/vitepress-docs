@@ -5,16 +5,16 @@ import { useData, useRoute } from "vitepress";
 const { page, site, theme } = useData();
 const route = useRoute();
 
-// Every page is published as markdown at its own URL with a .md extension
-// (see the config factory). Deriving the twin from the route rather than from
-// page.relativePath keeps `cleanUrls` and `rewrites` out of it.
+// Every page has a markdown copy at its own URL with a .md extension (see the
+// config factory). Deriving it from the route keeps `cleanUrls` and `rewrites`
+// out of the picture.
 const markdownHref = computed(
 	() => `${route.path.replace(/\.html$/, "").replace(/\/$/, "/index")}.md`,
 );
 
 const enabled = computed(() => theme.value.agentMarkdown !== false && !page.value.isNotFound);
 
-/** Hand the assistant the markdown twin, not the page it is rendered into. */
+/** Point the assistant at the markdown, not at the rendered page. */
 const prompt = () =>
 	`Read ${new URL(markdownHref.value, location.origin).href} so you can answer ` +
 	`questions about "${page.value.title}" from the ${site.value.title} documentation.`;
@@ -38,8 +38,7 @@ function onKey(event: KeyboardEvent) {
 
 function toggle() {
 	open.value = !open.value;
-	// Bound only while the menu is open, so no listener sits on the document
-	// for the whole visit just to catch an outside click.
+	// Only listen while the menu is open.
 	if (open.value) {
 		document.addEventListener("click", close);
 		document.addEventListener("keydown", onKey);
@@ -58,7 +57,7 @@ async function copy() {
 		clearTimeout(clear);
 		clear = window.setTimeout(() => (copied.value = false), 2000);
 	} catch {
-		// No clipboard permission (or no twin): show the markdown instead.
+		// No clipboard permission, or nothing to fetch: just show the markdown.
 		window.open(markdownHref.value, "_blank", "noreferrer");
 	}
 }

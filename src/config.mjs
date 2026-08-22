@@ -7,17 +7,17 @@ import MarkdownItGitHubAlerts from "markdown-it-github-alerts";
 
 const themeRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-/** Where the fleet's docs are published; sitemap and llms.txt URLs need it. */
+/** Origin the docs are published under; the sitemap and llms.txt need absolute URLs. */
 const SITE_ORIGIN = "https://www.dynamsoft.com";
 
 /**
- * The committed version manifest (versions.json in the site root); the
- * served copy is generated (dev middleware / buildEnd / build-versions bin).
+ * The committed version manifest. The copy that gets served is generated —
+ * see the dev middleware below, buildEnd, and the build-versions bin.
  * @param {string} root
  */
 const manifestIn = (root) => resolve(root, "versions.json");
 
-/** Content types for serving the assembled version tree in dev. */
+/** Content types for the files served out of the assembled version tree. */
 const MIME = /** @type {Record<string, string>} */ ({
 	".html": "text/html",
 	".js": "text/javascript",
@@ -36,15 +36,11 @@ const MIME = /** @type {Record<string, string>} */ ({
 });
 
 /**
- * Dev-server support for the versioning model:
- * - serves the manifest at <docsRoot>versions.json (the version switcher
- *   fetches it from the docs root; builds get it via buildEnd instead);
- * - serves other versions' subpaths from the assembled tree that
- *   `ds-docs-build-versions` leaves at <repo>/_site, so the switcher works
- *   in dev — latest stays live, frozen versions are static. Versions not
- *   built yet get a 404 explaining how to build them.
+ * Makes the version switcher work in dev: serves the manifest, and serves the
+ * other versions out of the tree `ds-docs-build-versions` assembles. A version
+ * that has not been built yet answers with a 404 saying so.
  * @param {string} base current base (the live site)
- * @param {string} docsRoot root of the deployed docs (versioned bases hang off it)
+ * @param {string} docsRoot root of the deployed docs
  * @returns {import("vite").Plugin}
  */
 const versionsPlugin = (base, docsRoot) => ({
@@ -52,7 +48,7 @@ const versionsPlugin = (base, docsRoot) => ({
 	apply: "serve",
 	configureServer(server) {
 		const root = server.config.root;
-		/** `ds-docs-build-versions` assembles into the repository root. */
+		/** Where `ds-docs-build-versions` leaves the assembled tree. */
 		const siteTree = (() => {
 			try {
 				return join(
@@ -103,34 +99,25 @@ const versionsPlugin = (base, docsRoot) => ({
 });
 
 // ── Page markdown for agents ─────────────────────────────────────────────
-/**
- * Every page is published twice: as HTML for readers, and as markdown for
- * agents at the same path with a `.md` extension. No single discovery
- * mechanism is honoured by every agent, so they are layered:
- *
- * 1. `<link rel="alternate" type="text/markdown">` on each page,
- * 2. `llms.txt` (the site's map) and `llms-full.txt` (everything in one
- *    file) at the site root — llmstxt.org,
- * 3. the page's own copy/open-in-chat actions (`MarkdownActions.vue`),
- * 4. IIS content negotiation on `Accept: text/markdown` (see the web.config
- *    additions below). This one is also a fix: the fleet's static host
- *    enforces Accept, so an agent asking strictly for markdown gets a bare
- *    406 from every page today.
- *
- * The markdown is captured as VitePress renders (a markdown-it core rule),
- * not read off disk: VitePress expands `<!--@include-->` before markdown-it
- * sees a page, and a page can be nothing but an include (changelog pages
- * are). The rebase markers the expansion leaves behind are stripped here.
- */
+// Every page is published twice: HTML for readers, and markdown for agents at
+// the same path with a `.md` extension. Four things point agents at it, since
+// none of them is universally respected: a rel="alternate" link on the page,
+// llms.txt and llms-full.txt at the site root, the page's own copy and
+// open-in-chat actions, and Accept negotiation (see withMarkdownServing).
+//
+// The markdown is captured as VitePress renders rather than read off disk,
+// because VitePress expands `<!--@include-->` first and a page can be nothing
+// but an include.
+
+/** Markers the include expansion leaves around what it inserted. */
 const INCLUDE_MARKERS = /^[ \t]*<!-- @include-(?:start: .*|end) -->[ \t]*\r?\n?/gm;
 
-/** Authoring notes a page may open with, ahead of its own H1. */
+/** Comments a page may open with, before its own H1. */
 const LEAD_COMMENTS = /^(?:<!--[\s\S]*?-->\s*)+/;
 
 /**
- * One page's published markdown: includes expanded, leading H1 assured. A
- * page that only includes another file (changelog pages do) has its H1 in
- * the expansion, so the title is prepended only when there is none.
+ * One page's published markdown. The title is added only when the page has no
+ * H1 of its own — a page that is just an include gets one from what it pulls in.
  * @param {string} src
  * @param {string} [title]
  */
@@ -141,8 +128,8 @@ const pageMarkdown = (src, title) => {
 };
 
 /**
- * Reading order: shallowest first, a directory's index page ahead of its
- * siblings, then alphabetical — the order a reader meets the pages in.
+ * Reading order: shallowest first, index pages ahead of their siblings, then
+ * alphabetical.
  * @param {string} a
  * @param {string} b
  */
@@ -152,7 +139,7 @@ const byRoute = (a, b) =>
 	a.localeCompare(b);
 
 /**
- * Source path → published path. Identity unless the site sets `rewrites`.
+ * Source path → published path. The two differ only under `rewrites`.
  * @param {string} page
  * @param {{ map?: Record<string, string | undefined> }} [rewrites]
  */
@@ -167,7 +154,8 @@ const pageHref = (page, cleanUrls) =>
 	page.replace(/(^|\/)index\.md$/, "$1").replace(/\.md$/, cleanUrls ? "" : ".html");
 
 /**
- * Directory label for llms.txt groups; breadcrumbLabels names them first.
+ * Heading for a group of pages in llms.txt; breadcrumbLabels wins if it names
+ * the directory.
  * @param {string} dir
  * @param {Record<string, string>} [labels]
  */
@@ -176,10 +164,10 @@ const groupLabel = (dir, labels) =>
 	dir.replace(/-/g, " ").replace(/\b\w/g, (/** @type {string} */ c) => c.toUpperCase());
 
 /**
- * Write the markdown twins plus llms.txt / llms-full.txt into the built site.
+ * Write the per-page markdown, llms.txt and llms-full.txt into the built site.
  * @param {import("vitepress").SiteConfig} siteConfig
  * @param {string} siteUrl absolute URL of this build's site root
- * @param {Map<string, string>} captured published path → include-expanded markdown
+ * @param {Map<string, string>} captured published path → markdown
  * @param {Map<string, { title?: string; description?: string }>} meta published path → page meta
  */
 function writePageMarkdown(siteConfig, siteUrl, captured, meta) {
@@ -188,16 +176,14 @@ function writePageMarkdown(siteConfig, siteUrl, captured, meta) {
 	/** @type {{ page: string; title: string; description: string; body: string }[]} */
 	const pages = [];
 
-	// siteConfig.pages lists source paths; everything downstream of the
-	// renderer (captured markdown, page data, the built HTML) is keyed by the
-	// published path, which differs when the site sets `rewrites`.
+	// siteConfig.pages holds source paths; everything after the renderer is
+	// keyed by the published path.
 	for (const source of siteConfig.pages) {
 		if (source === "404.md") continue;
 		const page = published(source, rewrites);
 		const src = captured.get(page);
 		if (src === undefined) {
-			// Only reachable if a page never went through the renderer.
-			console.warn(`no markdown captured for ${page}; skipping its .md twin`);
+			console.warn(`no markdown captured for ${page}; skipping its .md copy`);
 			continue;
 		}
 		const { title, description } = meta.get(page) ?? {};
@@ -208,8 +194,8 @@ function writePageMarkdown(siteConfig, siteUrl, captured, meta) {
 		pages.push({ page, title: title ?? page, description: description ?? "", body });
 	}
 
-	// Grouped by directory — the site's own shape, and complete by
-	// construction (an authored sidebar can leave pages out).
+	// Grouped by directory: the site's own shape, and unlike an authored
+	// sidebar it cannot leave a page out.
 	pages.sort((a, b) => byRoute(a.page, b.page));
 	/** @type {Map<string, typeof pages>} */
 	const groups = new Map();
@@ -239,8 +225,8 @@ function writePageMarkdown(siteConfig, siteUrl, captured, meta) {
 	];
 	writeFileSync(join(outDir, "llms.txt"), `${index.join("\n\n")}\n`);
 
-	// Each page keeps its own URL alongside it: the markdown links inside are
-	// relative to the page, not to this file.
+	// Each section carries its own URL, because the links inside a page are
+	// relative to that page.
 	const full = pages.map(
 		({ page, body }) => `Source: <${siteUrl}${pageHref(page, cleanUrls)}>\n\n${body}`,
 	);
@@ -249,8 +235,8 @@ function writePageMarkdown(siteConfig, siteUrl, captured, meta) {
 }
 
 /**
- * Dev-server twin of the markdown emitted at build time, so the page actions
- * (and an agent pointed at a dev server) work the same locally.
+ * Serves the same markdown in dev, so the page actions and `.md` URLs behave
+ * locally as they do on the built site.
  * @param {string} base
  * @param {Map<string, string>} captured
  * @param {Map<string, { title?: string }>} meta
@@ -262,16 +248,13 @@ const pageMarkdownPlugin = (base, captured, meta) => ({
 	configureServer(server) {
 		server.middlewares.use((req, res, next) => {
 			const [url = "", query] = (req.url ?? "").split("?");
-			// Only a bare .md URL — what a reader, an agent or the page actions
-			// ask for. VitePress fetches a page's own module as
-			// `<page>.md?import&t=<ms>` in dev and Vite tags its module requests
-			// with a query too; answering one of those with raw markdown breaks
-			// the router (the page then renders as 404).
+			// Bare .md URLs only. In dev VitePress loads a page's own module as
+			// `<page>.md?import&t=<ms>`, and answering that with markdown breaks
+			// the router: every page then renders as 404.
 			if (query !== undefined || req.headers["sec-fetch-dest"] === "script") return next();
 			if (!url.startsWith(base) || !url.endsWith(".md")) return next();
 			const page = decodeURIComponent(url.slice(base.length));
-			// The capture rule runs while VitePress renders, so render first —
-			// a page that does not exist stays a 404 (transformRequest throws).
+			// Capture happens during the render, so render the page first.
 			server
 				.transformRequest(`/${page}`)
 				.then(() => {
@@ -286,27 +269,23 @@ const pageMarkdownPlugin = (base, captured, meta) => ({
 });
 
 /**
- * IIS additions the markdown twins need, spliced into the site's web.config
- * as it is published (the committed file is never touched):
+ * What IIS needs in order to serve the markdown, spliced into the site's
+ * web.config as it is published — the committed file is never touched:
  *
- * - a `.md` MIME mapping, without which IIS refuses to serve the twins at
- *   all (404.3 — "extension not configured");
- * - content negotiation: `Accept: text/markdown` on a page URL serves the
- *   twin instead of the HTML, which is also the only way such a request
- *   stops being a 406 (IIS enforces Accept against the response type);
- * - `Vary: Accept`, so a shared cache cannot serve one variant as the other.
- *   CloudFront fronts the fleet and ignores Vary, so its cache key must
- *   include Accept for the negotiation to be safe there — see the README.
+ * - a `.md` MIME mapping, or IIS will not serve those files at all;
+ * - a rewrite that answers `Accept: text/markdown` with the markdown, which
+ *   is also the only way such a request stops being a 406 (IIS checks Accept
+ *   against the type it is about to send);
+ * - `Vary: Accept`, so a shared cache cannot hand one variant to the wrong
+ *   client. CloudFront ignores Vary, so see the README for what it needs.
  *
- * Rules follow the conventions of the hand-written fleet rules: unique
- * names, patterns anchored, `{DOCUMENT_ROOT}` + this build's base for file
- * probes (so a frozen version's copy probes its own subtree), IIS defaults
- * left implicit.
+ * File probes use `{DOCUMENT_ROOT}` plus this build's base, so a frozen
+ * version's copy of the rules looks inside its own subtree.
  * @param {string} xml
  * @param {string} base
  */
 function withMarkdownServing(xml, base) {
-	// A site that maps .md itself owns the whole arrangement; leave it be.
+	// A site that maps .md itself has taken this over.
 	if (xml.includes('fileExtension=".md"')) return xml;
 	if (!xml.includes("</system.webServer>")) {
 		console.warn("web.config has no <system.webServer>; markdown serving not added");
@@ -328,7 +307,6 @@ function withMarkdownServing(xml, base) {
 	];
 	return [
 		{
-			// Serving a page's markdown twin to agents that ask for markdown.
 			path: ["rewrite", "rules"],
 			lines: [
 				"<!-- GENERATED by @dynamsoft-docs/vitepress-docs -->",
@@ -346,7 +324,7 @@ function withMarkdownServing(xml, base) {
 			],
 		},
 		{
-			// The pages now negotiate, so their responses vary by Accept.
+			// The pages answer on Accept now, so their responses vary by it.
 			path: ["httpProtocol", "customHeaders"],
 			lines: [
 				"<!-- GENERATED by @dynamsoft-docs/vitepress-docs -->",
@@ -357,10 +335,9 @@ function withMarkdownServing(xml, base) {
 }
 
 /**
- * Add `lines` to `<system.webServer>`, nested in `path` — reusing whichever
- * of those elements the site's own file already has, because IIS rejects a
- * second `<staticContent>` (or `<rewrite>`, `<rules>`, …) in one section.
- * Indentation is rebuilt from the insertion depth.
+ * Add `lines` to `<system.webServer>`, nested inside `path`, reusing whichever
+ * of those elements the site's file already has: IIS rejects a second
+ * `<staticContent>` (or `<rewrite>`, `<rules>`, …) in the same section.
  * @param {string} xml
  * @param {string[]} path element names, outermost first
  * @param {string[]} lines
@@ -379,18 +356,16 @@ function insertInto(xml, path, lines) {
 	for (let depth = path.length; depth > 0; depth--) {
 		const tag = `<${path[depth - 1]}>`;
 		if (!xml.includes(tag)) continue;
-		// Inside an existing element: two tabs for configuration/system.webServer.
+		// Two tabs deeper, for <configuration><system.webServer>.
 		return xml.replace(tag, `${tag}\n${nest(path.slice(depth), depth + 2)}`);
 	}
-	// Consume the closing tag's own indentation, so the generated block keeps
-	// the indentation it was written with.
+	// Swallow the closing tag's indentation so the block keeps its own.
 	return xml.replace(
 		/([ \t]*)<\/system\.webServer>/,
 		(_, indent) => `${nest(path, 2)}\n${indent}</system.webServer>`,
 	);
 }
 
-/** Published when a site keeps no web.config of its own. */
 const WEB_CONFIG_SKELETON = `<?xml version="1.0" encoding="UTF-8"?>
 <!-- GENERATED by @dynamsoft-docs/vitepress-docs — this site keeps no
 			web.config of its own; see the theme README. -->
@@ -401,20 +376,13 @@ const WEB_CONFIG_SKELETON = `<?xml version="1.0" encoding="UTF-8"?>
 `;
 
 /**
- * Wrap a docs site's VitePress config with the fleet-wide Dynamsoft
- * defaults; site-provided values extend or override them.
+ * Wrap a docs site's VitePress config with the Dynamsoft defaults. Anything
+ * the site sets wins, and its `head` entries are appended to ours.
  *
- * - The dev server may read this theme's checkout (file:-linked installs
- *   resolve imports from the real path, outside the site root) and binds
- *   all interfaces (fleet docs dev happens in containers behind proxied
- *   interfaces).
- * - vue/vitepress are deduped and the theme is added to `ssr.noExternal`:
- *   the theme ships TypeScript/Vue source, so its peer imports must resolve
- *   to the site's single instances (vital for file:/linked installs) and it
- *   must be bundled, not externalized, when installed from a registry.
- * - A sitemap is generated for www.dynamsoft.com and the corporate favicon
- *   is set; a site-provided `sitemap` wins, site `head` entries append.
- *
+ * The vite settings are the fiddly part. This theme ships TypeScript and Vue
+ * source, so it has to be bundled rather than externalized, and vue and
+ * vitepress are deduped — otherwise a `file:`-linked checkout ends up with a
+ * second copy of each and the site silently falls back to the default theme.
  * @param {import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>} config
  * @returns {import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>}
  */
@@ -425,22 +393,20 @@ export function defineDynamsoftConfig(config) {
 	const siteUrl = new URL(base, SITE_ORIGIN).href;
 	const siteMarkdownConfig = config.markdown?.config;
 	const siteNoExternal = config.vite?.ssr?.noExternal;
-	// Markdown for agents, filled while VitePress renders and drained by
-	// buildEnd (build) or served by pageMarkdownPlugin (dev).
+	// Filled while VitePress renders; written out by buildEnd, or served by
+	// pageMarkdownPlugin in dev.
 	const agentMarkdown = config.themeConfig?.agentMarkdown ?? true;
 	/** @type {Map<string, string>} */
 	const captured = new Map();
 	/** @type {Map<string, { title?: string; description?: string }>} */
 	const pageMeta = new Map();
-	// Google Tag Manager
 	const gtm = config.themeConfig?.dynamsoftChrome
 		? (config.themeConfig.gtm ?? "GTM-538F83")
 		: undefined;
 	return {
 		lastUpdated: true,
-		// The sitemap hostname must carry the base path — a sitemap covers the
-		// URLs at or below its own location, and the fleet's robots.txt is
-		// corporate-owned. Versioned copies are left out of search indexes.
+		// The hostname carries the base path: a sitemap only covers URLs at or
+		// below its own location. Versioned copies are left unindexed.
 		...(version ? {} : { sitemap: { hostname: siteUrl } }),
 		...config,
 		base,
@@ -462,8 +428,8 @@ export function defineDynamsoftConfig(config) {
 			...(config.head ?? []),
 		],
 		/**
-		 * Advertise the page's markdown twin and collect what llms.txt is
-		 * written from. A site's own hook still runs, and its result wins.
+		 * Advertise the page's markdown and collect what llms.txt is built from.
+		 * A site's own hook still runs, and its result wins.
 		 */
 		async transformPageData(pageData, context) {
 			if (agentMarkdown && !pageData.isNotFound) {
@@ -486,11 +452,9 @@ export function defineDynamsoftConfig(config) {
 			return config.transformPageData?.(pageData, context);
 		},
 		async buildEnd(siteConfig) {
-			// Publish the committed manifest into the built site so the version
-			// switcher (which fetches <docsRoot>versions.json) finds it.
+			// The version switcher fetches this from the docs root.
 			const manifest = manifestIn(siteConfig.root);
 			if (existsSync(manifest)) cpSync(manifest, join(siteConfig.outDir, "versions.json"));
-			// The site's web.config, plus the fleet's markdown serving rules.
 			const webConfig = resolve(siteConfig.root, "web.config");
 			const site = existsSync(webConfig) ? readFileSync(webConfig, "utf8") : undefined;
 			if (site !== undefined || agentMarkdown) {
@@ -520,8 +484,8 @@ export function defineDynamsoftConfig(config) {
 			...config.markdown,
 			config(md) {
 				md.use(MarkdownItGitHubAlerts);
-				// Last core rule: state.src is then the page's markdown with its
-				// includes expanded — what the .md twins publish.
+				// Runs last, so state.src is the page's markdown with its includes
+				// already expanded.
 				md.core.ruler.push("ds-capture-markdown", (state) => {
 					const { relativePath } = /** @type {{ relativePath?: string }} */ (state.env);
 					if (relativePath) captured.set(relativePath, state.src);
@@ -537,8 +501,7 @@ export function defineDynamsoftConfig(config) {
 				...(agentMarkdown ? [pageMarkdownPlugin(base, captured, pageMeta)] : []),
 			],
 			server: {
-				// Fleet docs dev runs in containers behind proxied interfaces;
-				// bind all interfaces by default. A site-provided host wins.
+				// Docs dev happens in containers behind proxied interfaces.
 				host: true,
 				...config.vite?.server,
 				fs: {
@@ -557,8 +520,7 @@ export function defineDynamsoftConfig(config) {
 			optimizeDeps: {
 				...config.vite?.optimizeDeps,
 				// The dep optimizer cannot pre-bundle this package's .vue source.
-				// Linked (file:) installs are excluded automatically; registry
-				// installs need it explicit.
+				// Linked installs are excluded for us; git installs are not.
 				exclude: [
 					...new Set([
 						"@dynamsoft-docs/vitepress-docs",
@@ -585,10 +547,9 @@ export function defineDynamsoftConfig(config) {
 }
 
 /**
- * Load API references into the side bar instead of in the header like the default.
- *
- * @param {string} [docsDir] docs package directory (defaults to the cwd,
- *   which is where VitePress runs config from)
+ * The generated API reference, for the sidebar rather than the nav.
+ * @param {string} [docsDir] docs package directory; defaults to the cwd,
+ *   which is where VitePress runs a config from
  * @returns {import("vitepress").DefaultTheme.SidebarItem[]}
  */
 export function loadApiSidebar(docsDir = process.cwd()) {
@@ -596,17 +557,15 @@ export function loadApiSidebar(docsDir = process.cwd()) {
 	return existsSync(file) ? breakCamelCase(JSON.parse(readFileSync(file, "utf8"))) : [];
 }
 
-/** camelCase and ACRONYMFollowed boundaries. */
+/** Word boundaries in a camelCase identifier. */
 const CAMEL_BOUNDARY = /(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
 
 /**
- * Offer the sidebar a break opportunity at every word boundary inside an API
- * identifier. An entry like DocumentCorrectionViewToolbarButtonsConfig is one
- * unbreakable word wider than the sidebar column, and the CSS fallback for
- * that (breaking anywhere) splits it mid-word, which is hard to read. `<wbr>`
- * breaks at a word instead, only when the line needs it — and unlike a
- * zero-width space it leaves nothing behind in copied text. VitePress renders
- * sidebar and prev/next labels as HTML, so the element survives to the DOM.
+ * Give the sidebar somewhere to break long API names. An entry like
+ * DocumentCorrectionViewToolbarButtonsConfig is a single word wider than the
+ * sidebar column, and the CSS fallback splits it mid-word. `<wbr>` breaks at a
+ * word instead, and leaves nothing behind in copied text. VitePress renders
+ * sidebar labels as HTML, so the element reaches the DOM.
  * @param {import("vitepress").DefaultTheme.SidebarItem[]} items
  * @returns {import("vitepress").DefaultTheme.SidebarItem[]}
  */

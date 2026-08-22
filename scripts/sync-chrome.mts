@@ -1,32 +1,17 @@
 #!/usr/bin/env node
 /**
- * Vendors the corporate header/footer — markup and styling — from
- * Docs-Template-Repo and the shared webres stylesheets into src/chrome/.
- * Run periodically to sync up with corporate theming.
+ * Vendors the corporate header and footer — markup and styling — into
+ * src/chrome/. Run it periodically to pick up corporate theming changes.
  *
- * Markup is fetched from GitHub raw on main (DOCS_TEMPLATE_BRANCH overrides
- * the branch); set DOCS_TEMPLATE_REPO to a local checkout to read the same
- * branch via `git show` instead (offline/pre-push work). Template-repo
- * stylesheets are read the same way; webres stylesheets are fetched from
- * www.dynamsoft.com.
+ * Markup and the template stylesheets come from Docs-Template-Repo on GitHub;
+ * DOCS_TEMPLATE_BRANCH picks a branch and DOCS_TEMPLATE_REPO reads a local
+ * checkout instead. The webres stylesheets come from www.dynamsoft.com.
  *
- * Each stylesheet is transformed so the corporate cascade renders correctly
- * inside a VitePress page without leaking into it:
- *   1. relative url()s are absolutized against their source location
- *      (template-repo assets resolve to GitHub raw — no product-site URLs),
- *   2. rem sizes are converted to px (the fleet sizes rem against its own
- *      html{font-size:10px}, which VitePress does not have),
- *   3. @font-face blocks are hoisted out (they must stay top-level), their
- *      template-repo font URLs retargeted to the shared webres copies
- *      (max-age=86400; GitHub raw serves fonts with max-age=300, so raw URLs
- *      re-download — and go fallback — on nearly every fresh visit; files
- *      missing from webres keep their template URL) and
- *      font-display:optional rewritten to swap (optional locks in the
- *      fallback for the whole visit whenever the font misses first paint),
- *   4. the fleet's bare custom font stacks (font-family:OpenSans-…) get
- *      sans-serif fallbacks so the not-yet-loaded state is never UA serif,
- *   5. :root/html/body selectors are rewritten to :scope,
- *   6. everything is wrapped in `@scope (.ds-corporate) { ... }`.
+ * Each stylesheet is then rewritten so the corporate cascade renders inside a
+ * VitePress page without leaking into it: url()s absolutized, rem sizes baked
+ * to px, @font-face hoisted out and pointed at the webres copies, fallbacks
+ * added to the bare font stacks, and the whole thing wrapped in
+ * `@scope (.ds-corporate)`. The functions below carry the details.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -35,7 +20,7 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const outDir = resolve(here, "../src/chrome");
-// Explicit opt-in for offline/pre-push work; GitHub raw is the default source.
+// Opt in for offline work; GitHub is the default source.
 const localRepo = process.env.DOCS_TEMPLATE_REPO;
 const branch = process.env.DOCS_TEMPLATE_BRANCH ?? "main";
 const rawBase = `https://raw.githubusercontent.com/dynamsoft-docs/Docs-Template-Repo/${branch}/`;
@@ -48,7 +33,7 @@ interface HtmlFile {
 
 interface CssSource {
 	name: string;
-	/** Path inside Docs-Template-Repo, read via git show / GitHub raw. */
+	/** Path inside Docs-Template-Repo. */
 	git?: string;
 	/** Absolute URL, fetched directly. */
 	url?: string;
@@ -59,7 +44,7 @@ const htmlFiles: HtmlFile[] = [
 	{ src: "_includes/page_footer.html", dest: "page-footer.html" },
 ];
 
-// The complete stylesheet cascade head.html loads, in order.
+// The stylesheets head.html loads, in the order it loads them.
 const cssSources: CssSource[] = [
 	{ name: "dm-style", git: "assets/css/dm-style.min.css" },
 	{ name: "bootstrap", git: "assets/css/bootstrap.min.css" },
@@ -91,10 +76,10 @@ async function fetchText(url: string): Promise<string> {
 
 const transformHtml = (html: string): string =>
 	html
-		// Same substitution the fleet's dev.sh applies at build time.
+		// The same substitution the corporate build applies.
 		.replaceAll("assetsPath = '/webres/wwwroot'", `assetsPath = '${webres.slice(0, -1)}'`)
 		.replaceAll(/\{\{\s*assetsPath\s*\}\}/g, webres.slice(0, -1))
-		// Liquid current-year → token substituted at runtime.
+		// Liquid current-year, substituted at runtime instead.
 		.replaceAll("{{ 'now' | date: '%Y' }}", "%%YEAR%%");
 
 /** Make every relative url() absolute against the stylesheet's own URL. */
@@ -104,11 +89,11 @@ const absolutizeUrls = (css: string, sourceUrl: string): string =>
 		return `url(${quote}${new URL(target, sourceUrl).href}${quote})`;
 	});
 
-/** The fleet sizes rem against html{font-size:10px}; bake that in as px. */
+/** The corporate CSS sizes rem against a 10px root; bake that in as px. */
 const remToPx = (css: string): string =>
 	css.replace(/([\d.]+)rem\b/g, (_, n) => `${Math.round(Number.parseFloat(n) * 100) * 0.1}px`);
 
-/** @font-face must stay top-level; @scope would silently drop it. */
+/** @font-face has to stay top-level; @scope would silently drop it. */
 function hoistFontFaces(css: string): { fontFaces: string[]; rest: string } {
 	const fontFaces: string[] = [];
 	const rest = css.replace(/@font-face\s*\{[^{}]*\}/g, (block) => {
@@ -125,10 +110,9 @@ const rawFontUrl = new RegExp(
 );
 
 /**
- * Retarget template-repo font URLs at the shared webres copies where they
- * exist (verified per file with a HEAD probe), and never lock in the
- * fallback: the fleet ships font-display:optional, which skips the font for
- * the entire visit whenever it is not ready within ~100ms of first paint.
+ * Point the fonts at the webres copies where they exist, since GitHub caches
+ * them for minutes rather than a day. Also drop font-display:optional, which
+ * skips the font for the whole visit if it misses first paint.
  */
 async function retargetFontFaces(blocks: string[]): Promise<string[]> {
 	const files = new Set<string>();
@@ -137,8 +121,8 @@ async function retargetFontFaces(blocks: string[]): Promise<string[]> {
 	}
 	const onWebres = new Map<string, boolean>();
 	for (const file of files) {
-		// Missing files redirect to an HTML error page, so exclude only that;
-		// webres serves ttf/svg fonts as octet-stream/svg+xml.
+		// A missing file redirects to an HTML error page, which is the only
+		// content type worth rejecting: ttf and svg arrive as other types.
 		const res = await fetch(`${webres}font-face/${file}`, { method: "HEAD" });
 		const found = res.ok && !/text\/html/i.test(res.headers.get("content-type") ?? "");
 		onWebres.set(file, found);
@@ -156,9 +140,8 @@ async function retargetFontFaces(blocks: string[]): Promise<string[]> {
 }
 
 /**
- * The fleet declares its custom families bare (font-family:OpenSans-…), so
- * while the font is loading — or if it fails — the browser falls back to
- * the UA default, a serif. Append a sans-serif stack.
+ * The corporate CSS names its families bare (font-family:OpenSans-…), so a
+ * font that is still loading, or missing, falls back to the browser's serif.
  */
 const addFontFallbacks = (css: string): string =>
 	css.replace(
@@ -166,7 +149,7 @@ const addFontFallbacks = (css: string): string =>
 		(_, family) => `font-family:${family},Helvetica,Arial,sans-serif`,
 	);
 
-/** :root/html/body can never match inside @scope; retarget the scope root. */
+/** :root, html and body cannot match inside @scope; aim them at the root. */
 const rescopeRootSelectors = (css: string): string =>
 	css.replace(/(^|[{},])\s*(:root|html|body)(?![\w-])/g, "$1:scope");
 

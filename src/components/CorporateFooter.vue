@@ -7,10 +7,9 @@ const host = ref<HTMLElement | null>(null);
 
 const footer = computed(() => footerHtml.replaceAll("%%YEAR%%", String(new Date().getFullYear())));
 
-// Every footer entry is a plain link except the back-to-top control, which
-// the vendored markup ships as a dead `javascript:void(0)` anchor: revealing
-// it past the fold and scrolling the page are the corporate layout.js's job
-// (not vendored). Reproduce both, like the header's menu shim.
+// Every footer entry is a plain link except back-to-top, which the vendored
+// markup ships as a dead `javascript:void(0)`: on the corporate site its own
+// JS reveals it past the fold and does the scrolling. Do both here.
 const REVEAL_AFTER = 400;
 let raf = 0;
 
@@ -39,11 +38,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<!-- vp-raw opts the subtree out of the VitePress router's click
-		handler. The docs are served from www.dynamsoft.com, so every
-		corporate link is same-origin: without this the router swallows the
-		click, pushes the URL, finds no page in this site and renders its own
-		404 — the target page only appears on a manual refresh. -->
+	<!-- vp-raw keeps the VitePress router out of this subtree. The docs are
+		served from www.dynamsoft.com, so every corporate link is same-origin:
+		without it the router swallows the click and renders this site's 404 at
+		the corporate URL, and only a refresh gets the reader there. -->
 	<div
 		ref="host"
 		class="ds-corporate ds-corporate-footer vp-raw"

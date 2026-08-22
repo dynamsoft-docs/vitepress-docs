@@ -4,8 +4,8 @@ import { useData, withBase } from "vitepress";
 
 const { page, frontmatter, theme } = useData();
 
-// Path directories become linked crumbs (labels overridable via
-// themeConfig.breadcrumbLabels); the page title is the final, unlinked crumb.
+// Each directory in the path becomes a linked crumb, named by
+// themeConfig.breadcrumbLabels where it says so; the page title ends the trail.
 const crumbs = computed(() => {
 	const labels: Record<string, string> = theme.value.breadcrumbLabels ?? {};
 	const dirs = page.value.relativePath
@@ -16,8 +16,7 @@ const crumbs = computed(() => {
 		text: labels[dir] ?? dir.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
 		link: withBase(`/${dirs.slice(0, i + 1).join("/")}/`),
 	}));
-	// An index page often titles itself like its directory (e.g.
-	// introduction/index.md titled "Introduction") — drop the redundant crumb.
+	// An index page usually repeats its directory's name; drop that crumb.
 	if (list.length > 0 && list[list.length - 1].text === page.value.title) list.pop();
 	return list;
 });

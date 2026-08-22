@@ -14,8 +14,8 @@ const current = ref("");
 
 onMounted(async () => {
 	try {
-		// versions.json is served from the docs root and shared by every
-		// deployed version, so a frozen copy can still list newer releases.
+		// One manifest at the docs root, shared by every deployed version, so a
+		// frozen copy can still list newer releases.
 		const res = await fetch(`${theme.value.docsRoot}versions.json`);
 		if (!res.ok) return;
 		versions.value = (await res.json()).versions ?? [];
@@ -32,12 +32,11 @@ onMounted(async () => {
 async function go(event: Event) {
 	const path = (event.target as HTMLSelectElement).value;
 	const root: string = theme.value.docsRoot;
-	// Try the same page in the target version (server-side redirects count:
-	// fetch follows them, and the browser will follow the same one), then
-	// walk up its ancestor directories, so a page without a counterpart
-	// lands on the closest section shared by both versions; the version
-	// root is the last resort. In dev the live version answers 200 for any
-	// path (SPA fallback), so switching to it there can land on a 404 page.
+	// Look for the same page in the target version, then walk up its parent
+	// directories, so a page with no counterpart lands on the nearest section
+	// the two versions share. The version root is the last resort. In dev the
+	// live version answers 200 for anything, so switching to it can land on a
+	// 404 page.
 	const samePage = location.pathname.slice((root + current.value).length);
 	const candidates = [samePage + location.hash];
 	for (let dir = samePage.replace(/[^/]*$/, ""); dir; dir = dir.replace(/[^/]*\/$/, "")) {
