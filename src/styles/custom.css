@@ -72,6 +72,13 @@
 	z-index: 60;
 }
 
+/* The corporate back-to-top button stays display:none until the corporate
+   layout.js reveals it past the fold; CorporateFooter.vue marks the host
+   instead (it also does the scrolling). */
+.ds-corporate-footer.ds-past-fold #toTop {
+	display: block;
+}
+
 /* The nav bar is the docs banner: breadcrumbs left; search, download, and
    theme switcher right. VitePress reserves its title column as the sidebar
    header and lets search grow into the middle — collapse both so the row
