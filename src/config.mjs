@@ -239,5 +239,26 @@ export function defineDynamsoftConfig(config) {
  */
 export function loadApiSidebar(docsDir = process.cwd()) {
 	const file = resolve(docsDir, "api/typedoc-sidebar.json");
-	return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : [];
+	return existsSync(file) ? breakCamelCase(JSON.parse(readFileSync(file, "utf8"))) : [];
 }
+
+/** camelCase and ACRONYMFollowed boundaries. */
+const CAMEL_BOUNDARY = /(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
+
+/**
+ * Offer the sidebar a break opportunity at every word boundary inside an API
+ * identifier. An entry like DocumentCorrectionViewToolbarButtonsConfig is one
+ * unbreakable word wider than the sidebar column, and the CSS fallback for
+ * that (breaking anywhere) splits it mid-word, which is hard to read. `<wbr>`
+ * breaks at a word instead, only when the line needs it — and unlike a
+ * zero-width space it leaves nothing behind in copied text. VitePress renders
+ * sidebar and prev/next labels as HTML, so the element survives to the DOM.
+ * @param {import("vitepress").DefaultTheme.SidebarItem[]} items
+ * @returns {import("vitepress").DefaultTheme.SidebarItem[]}
+ */
+const breakCamelCase = (items) =>
+	items.map((item) => ({
+		...item,
+		...(item.text ? { text: item.text.replace(CAMEL_BOUNDARY, "<wbr>") } : {}),
+		...(item.items ? { items: breakCamelCase(item.items) } : {}),
+	}));

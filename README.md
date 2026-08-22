@@ -197,7 +197,12 @@ present in this package's `node_modules`, not just the consumer's.
 
 - `api/` is generated from TSDoc comments via typedoc +
 typedoc-plugin-markdown + typedoc-vitepress-theme. VitePress has no built-in
-for file-structure sidebar derivation .
+for file-structure sidebar derivation . `loadApiSidebar` marks the camelCase
+boundaries in the entry names with `<wbr>`: a name like
+`DocumentCorrectionViewToolbarButtonsConfig` is one unbreakable word wider
+than the sidebar column, and the CSS fallback for that breaks it mid-word.
+The default theme renders sidebar and prev/next labels as HTML, and `<wbr>`
+leaves nothing behind in copied text.
 - GFM callouts (`> [!NOTE]` etc.) render GitHub-style out of the box.
 - The `ds-docs-npm-readme` bin renders a guide page npm-ready: it prints the
 	page with site-relative links absolutized against the given production
