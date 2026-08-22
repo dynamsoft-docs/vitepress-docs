@@ -248,7 +248,10 @@ layered:
 	markdown. This one is also a bug fix — IIS enforces `Accept` against the
 	response type, so `curl -H 'Accept: text/markdown' <any docs page>`
 	otherwise answers **406 — client browser does not accept the MIME type**,
-	which is what an agent asking strictly for markdown gets. The rewrite does
+	which is what an agent asking strictly for markdown gets. It compares
+	against the whole configured type, too, so the `.md` mapping deliberately
+	carries no `charset`: with one, the same strict request is refused even for
+	a `.md` URL. Markdown is read as UTF-8 by convention instead. The rewrite does
 	not check that the file exists first: a `{DOCUMENT_ROOT}`-based probe (the
 	shape the corporate template's `webp` rule uses) never matched on the live
 	server, so the rules run last instead, after whatever redirects the site
