@@ -1,6 +1,6 @@
 {
 	"name": "@dynamsoft-docs/vitepress-docs",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Dynamsoft docs-site toolkit for VitePress: corporate chrome theme, version switcher and multi-version builds, config factory, and docs bins.",
 	"license": "UNLICENSED",
 	"repository": {
