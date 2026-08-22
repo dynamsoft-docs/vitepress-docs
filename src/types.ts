@@ -9,6 +9,13 @@ export interface DynamsoftThemeConfig extends DefaultTheme.Config {
 	docsRoot: string;
 	/** Render the Dynamsoft corporate header/footer. */
 	dynamsoftChrome: boolean;
+	/**
+	 * Publish every page as markdown for agents as well as HTML: a `.md` twin
+	 * per page, `llms.txt`/`llms-full.txt`, `rel="alternate"` links, IIS
+	 * content negotiation, and the page's copy/open-in-chat actions. Default
+	 * true; set false to publish HTML only.
+	 */
+	agentMarkdown?: boolean;
 	/** Breadcrumb labels per path directory, e.g. { api: "API Reference" }. */
 	breadcrumbLabels?: Record<string, string>;
 	/** Comm100 live-chat overrides; the fleet-wide site/plan is the default. */

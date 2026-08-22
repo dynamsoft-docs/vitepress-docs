@@ -6,6 +6,7 @@ import Comm100Chat from "./components/Comm100Chat.vue";
 import CorporateFooter from "./components/CorporateFooter.vue";
 import CorporateHeader from "./components/CorporateHeader.vue";
 import GoogleTagManager from "./components/GoogleTagManager.vue";
+import MarkdownActions from "./components/MarkdownActions.vue";
 import VersionSwitcher from "./components/VersionSwitcher.vue";
 
 const { theme } = useData();
@@ -21,6 +22,9 @@ const { theme } = useData();
 		</template>
 		<template #sidebar-nav-before>
 			<VersionSwitcher />
+		</template>
+		<template #doc-before>
+			<MarkdownActions />
 		</template>
 		<template #layout-bottom>
 			<CorporateFooter v-if="theme.dynamsoftChrome" />
