@@ -12,4 +12,4 @@
  * @param {import("./types.js").DynamsoftTypedocConfig} [config]
  * @returns {Record<string, unknown>}
  */
-export function defineDynamsoftTypedoc(config?: import("./types.js").DynamsoftTypedocConfig): Record<string, unknown>;
+export declare function defineDynamsoftTypedoc(config?: import("./types.js").DynamsoftTypedocConfig): Record<string, unknown>;

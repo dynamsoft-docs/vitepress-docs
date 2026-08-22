@@ -16,7 +16,7 @@
  * @param {import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>} config
  * @returns {import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>}
  */
-export function defineDynamsoftConfig(config: import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>): import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>;
+export declare function defineDynamsoftConfig(config: import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>): import("vitepress").UserConfig<import("./types.js").DynamsoftThemeConfig>;
 /**
  * Load API references into the side bar instead of in the header like the default.
  *
@@ -24,4 +24,4 @@ export function defineDynamsoftConfig(config: import("vitepress").UserConfig<imp
  *   which is where VitePress runs config from)
  * @returns {import("vitepress").DefaultTheme.SidebarItem[]}
  */
-export function loadApiSidebar(docsDir?: string): import("vitepress").DefaultTheme.SidebarItem[];
+export declare function loadApiSidebar(docsDir?: string): import("vitepress").DefaultTheme.SidebarItem[];
