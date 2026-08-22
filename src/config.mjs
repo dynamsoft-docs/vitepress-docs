@@ -7,6 +7,9 @@ import MarkdownItGitHubAlerts from "markdown-it-github-alerts";
 
 const themeRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
+/** Where the fleet's docs are published; sitemap and llms.txt URLs need it. */
+const SITE_ORIGIN = "https://www.dynamsoft.com";
+
 /**
  * The committed version manifest (versions.json in the site root); the
  * served copy is generated (dev middleware / buildEnd / build-versions bin).
@@ -121,6 +124,7 @@ export function defineDynamsoftConfig(config) {
 	const version = process.env.DOCS_VERSION?.replace(/^\/+|\/+$/g, "") ?? "";
 	const docsRoot = config.themeConfig?.docsRoot ?? "/";
 	const base = config.base ?? (version ? `${docsRoot}${version}/` : docsRoot);
+	const siteUrl = new URL(base, SITE_ORIGIN).href;
 	const siteMarkdownConfig = config.markdown?.config;
 	const siteNoExternal = config.vite?.ssr?.noExternal;
 	// Google Tag Manager
@@ -129,9 +133,10 @@ export function defineDynamsoftConfig(config) {
 		: undefined;
 	return {
 		lastUpdated: true,
-		// The sitemap hostname must carry the base path; versioned copies are
-		// left out of search indexes.
-		...(version ? {} : { sitemap: { hostname: new URL(base, "https://www.dynamsoft.com").href } }),
+		// The sitemap hostname must carry the base path — a sitemap covers the
+		// URLs at or below its own location, and the fleet's robots.txt is
+		// corporate-owned. Versioned copies are left out of search indexes.
+		...(version ? {} : { sitemap: { hostname: siteUrl } }),
 		...config,
 		base,
 		head: [
