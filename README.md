@@ -244,12 +244,17 @@ layered:
 	markdown; the menu offers "View as Markdown", "Open in Claude" and "Open
 	in ChatGPT" — the last two hand the assistant the `.md` URL instead of
 	pasting a wall of text into the prompt.
-- Content negotiation: `Accept: text/markdown` on a page URL serves the twin.
-	This one is also a bug fix. The fleet's IIS enforces `Accept` against the
-	response type, so today
-	`curl -H 'Accept: text/markdown' <any docs page>` answers **406 — client
-	browser does not accept the MIME type**, which is what an agent asking
-	strictly for markdown gets.
+- Content negotiation: `Accept: text/markdown` on a page URL serves the
+	markdown. This one is also a bug fix — IIS enforces `Accept` against the
+	response type, so `curl -H 'Accept: text/markdown' <any docs page>`
+	otherwise answers **406 — client browser does not accept the MIME type**,
+	which is what an agent asking strictly for markdown gets. The rewrite does
+	not check that the file exists first: a `{DOCUMENT_ROOT}`-based probe (the
+	shape the corporate template's `webp` rule uses) never matched on the live
+	server, so the rules run last instead, after whatever redirects the site
+	keeps for itself. A page whose markdown is missing — a frozen version
+	built by an older release of this package — then answers 404 to a
+	markdown-only request instead of sending HTML.
 
 Negotiation and the `.md` MIME mapping are IIS configuration, so `buildEnd`
 splices them into the site's `web.config` as it publishes it — the committed
@@ -257,16 +262,21 @@ file is never touched, and a site that maps `.md` itself keeps full control.
 Both parts are needed: without the MIME mapping IIS refuses to serve a `.md`
 file at all (404.3, "extension not configured").
 
-Three caveats, in order of importance:
+Four caveats, in order of importance:
 
-1. **Deploy to the beta site first.** These are the first generated lines in
-	a `web.config`, and a `web.config` IIS rejects is a 500.19 for the whole
-	docs tree. In particular `<remove fileExtension=".md" />` guards against a
-	duplicate mapping inherited from the server, which is the failure mode
-	that is documented; the reverse (removing a mapping that was never there)
-	is not. Confirm on beta that pages, `.md` URLs and negotiation all answer,
-	then deploy to production.
-2. **CloudFront ignores `Vary`.** The generated block sets `Vary: Accept`, so
+1. **A docs site can be nested inside another one** — MWC publishes under
+	MDS's `code-gallery/`. IIS merges a directory's config with its parents'
+	and rejects the entire subtree over a single duplicate key, so everything
+	generated here is written to survive that: the rules are named after the
+	site's own base, and the `.md` mapping and the `Vary` header are removed
+	before they are added. Adding an unqualified rule name is what took the
+	MWC subtree down (every URL under it answering with the site's error
+	handler, whether the file existed or not).
+2. **Deploy to the beta site first.** A `web.config` IIS rejects is a 500.19
+	for the whole subtree, and the symptom looks like a missing directory
+	rather than an error. Confirm on beta that pages, `.md` URLs and
+	negotiation all answer, then deploy to production.
+3. **CloudFront ignores `Vary`.** The generated block sets `Vary: Accept`, so
 	shared caches that respect it keep the two variants apart, but the
 	distribution in front of www.dynamsoft.com decides its own cache key:
 	`Accept` has to be part of it, or an agent's markdown response can later
@@ -274,7 +284,7 @@ Three caveats, in order of importance:
 	was written came back `x-cache: Miss from cloudfront`, so edge caching of
 	these paths looks disabled or already header-keyed — worth confirming with
 	whoever owns the distribution.
-3. `llms.txt` sits at the docs root, which is as high as a docs site reaches.
+4. `llms.txt` sits at the docs root, which is as high as a docs site reaches.
 	A fleet-wide `/llms.txt` pointing at each product's would have to be owned
 	by the corporate site, like robots.txt.
 
