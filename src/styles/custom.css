@@ -27,15 +27,25 @@
 	transform: translateY(var(--ds-header-offset, 0));
 }
 
-/* Logged-out is the truthful state without the corporate session JS, whose
-   job it is to reveal one of the two account blocks — reveal the visitor
-   ("Log in") block statically instead. */
+/* Revealing one of the two account blocks is the corporate session JS's job;
+   the header component does it here instead, marking the host .ds-signed-in
+   once it has read the corporate session (see CorporateHeader.vue). Logged out
+   is the default, so a reader with no session — or one whose session lookup is
+   still in flight, or who has JS disabled — gets the "Log in" block. */
 .ds-corporate .header-signin {
 	display: none !important;
 }
 
 .ds-corporate .header-visitor {
 	display: block !important;
+}
+
+.ds-corporate.ds-signed-in .header-signin {
+	display: block !important;
+}
+
+.ds-corporate.ds-signed-in .header-visitor {
+	display: none !important;
 }
 
 /* The narrow-screen hamburger and search toggles need the corporate

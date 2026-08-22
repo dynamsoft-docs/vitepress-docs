@@ -20,7 +20,17 @@ of the default VitePress theme).
 	is not vendored
 		6. the header scrolls away with the page while the VitePress
 	nav bar docks at the viewport top
-		7. known gaps: the mobile hamburger menu is inert, and the signed-in account widget shows its logged-out state.
+		7. both hosts carry `vp-raw`, which is how the VitePress router is kept
+	from hijacking the corporate links: the docs are served from
+	www.dynamsoft.com, so every one of them is same-origin, and an intercepted
+	click renders this site's 404 at the corporate URL until the reader
+	refreshes
+		8. the remaining inert controls in the vendored markup are wired by the
+	same shims (portal login carrying a return `callback`, corporate session,
+	the signed-in account popup and its logout, back-to-top) or hidden
+	(`.xsMenuToggle`, the header search icon), so no dead link ships
+		9. known gap: the mobile hamburger menu is inert (hidden — VitePress
+	has its own narrow-screen nav).
 - **Doc skin** — `styles/doc-skin.css` styles the article body like the
 	original Jekyll docs (GitHub-markdown look in OpenSans: 16px/26px `#24292e`
 	text, `#0366d6` links, bordered GFM tables, `#f5f5f5` code blocks), with a
