@@ -89,7 +89,7 @@ const versionsPlugin = (base, docsRoot) => ({
 				res.setHeader("Content-Type", "text/plain");
 				return res.end(
 					`${url} is not in the assembled version tree (${siteTree}).\n` +
-						"Run `npm run build:versions` to build the versions designated in versions.json.\n",
+						"Run `vp run build:versions` to build the versions designated in versions.json.\n",
 				);
 			}
 			res.setHeader("Content-Type", MIME[extname(file)] ?? "application/octet-stream");

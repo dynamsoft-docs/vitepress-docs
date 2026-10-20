@@ -81,8 +81,8 @@ CI-checked for staleness. Public types live in `src/types.ts`.
 {
 	"scripts": {
 		"api": "typedoc",
-		"dev": "pnpm run api && vitepress dev",
-		"build": "pnpm run api && vitepress build",
+		"dev": "vp run api && vitepress dev",
+		"build": "vp run api && vitepress build",
 		"preview": "vitepress preview",
 		"build:versions": "ds-docs-build-versions",
 	},
@@ -94,9 +94,9 @@ CI-checked for staleness. Public types live in `src/types.ts`.
 ```
 
 `#semver:` resolves against the repo's version tags (`v0.1.0`) and
-the consumer's lockfile pins the exact commit, so `pnpm install --frozen-lockfile` is
-reproducible. pnpm packs the clone with the usual `files`/`bin` rules, and
-the package ships source with no `prepare` script, so nothing builds at
+the consumer's lockfile pins the exact commit, so
+`vp install --frozen-lockfile` is reproducible. The package manager packs
+the clone with the usual `files`/`bin` rules, and the package ships source with no `prepare` script, so nothing builds at
 install time.
 
 ```ts
@@ -167,7 +167,7 @@ build error, nothing for a link checker to catch.
 So `defineDynamsoftTypedoc` does not write one down. `versions.json`
 already names the branch each version is built from, and that branch is
 the source being documented: `ds-docs-build-versions` passes it as
-`DOCS_BRANCH`, and a plain `pnpm run api` uses the checked-out branch.
+`DOCS_BRANCH`, and a plain `vp run api` uses the checked-out branch.
 Nothing has to be kept in step, so nothing can fall behind.
 
 The branch must exist on the repository `repo` names — the public product
@@ -180,7 +180,7 @@ git for are already known, and left to find a repository itself it needs
 saying so. Link `{path}` is rooted at `displayBasePath`, not `basePath` as
 the option help claims.
 
-Install with `pnpm install` in the docs package (and in the repo root — the
+Install with `vp install` in the docs package (and in the repo root — the
 API reference is generated from the product's TypeScript source, which
 resolves types from the root `node_modules`). While this theme is consumed
 via a `file:` link, also run `pnpm install` in this checkout: Node and Vite
@@ -191,10 +191,10 @@ present in this package's `node_modules`, not just the consumer's.
 
 | Command                   | Effect                                                                                                |
 | ------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `pnpm run dev`            | Generate API markdown, then serve the site locally with live reload                                   |
-| `pnpm run build`          | Generate API markdown, then build the static site to `.vitepress/dist/`                               |
-| `pnpm run api`            | Regenerate only the API reference (`api/`, gitignored)                                                |
-| `pnpm run build:versions` | Build every branch tracked by `versions.json` and assemble the multi-version tree into `<repo>/_site` |
+| `vp run dev`            | Generate API markdown, then serve the site locally with live reload                                   |
+| `vp run build`          | Generate API markdown, then build the static site to `.vitepress/dist/`                               |
+| `vp run api`            | Regenerate only the API reference (`api/`, gitignored)                                                |
+| `vp run build:versions` | Build every branch tracked by `versions.json` and assemble the multi-version tree into `<repo>/_site` |
 
 ## Content conventions
 
@@ -346,10 +346,10 @@ deploy as a whole. Each build also gets its tracked branch as
 `<base>versions.json` in dev and copies it into single builds via
 `buildEnd`.
 
-`pnpm run dev` serves the **current checkout live** at the docs root and the
+`vp run dev` serves the **current checkout live** at the docs root and the
 **other versions statically** from the assembled tree at `<repo>/_site`, so
-the version switcher works in dev — run `pnpm run build:versions` once to
-assemble it first to serve it with `pnpm run dev`.
+the version switcher works in dev — run `vp run build:versions` once to
+assemble it first to serve it with `vp run dev`.
 
 ## Deployment (fleet convention)
 
@@ -388,8 +388,8 @@ jobs:
 	test site behind the "beta" input (separate FTP secrets pair; both pairs
 	are passed explicitly by the caller, declared under
 	`on.workflow_call.secrets`).
-- `uses:` takes an exact ref — no `#semver:` ranges like the npm
-	dependency — so callers ride `@main`, or pin a release tag at the cost
+- `uses:` takes an exact ref — no `#semver:` ranges like the
+	git dependency — so callers ride `@main`, or pin a release tag at the cost
 	of a second version to bump.
 - The FTP action's sync state only manages files it uploaded itself:
 	pre-existing server content (e.g. frozen Jekyll-era version copies) is
@@ -399,12 +399,15 @@ jobs:
 	site at `buildEnd`, like the version manifest, with the fleet's markdown
 	serving rules spliced in (Markdown for agents). `public/` is untracked
 	scratch space by fleet convention, so deploy files never live there.
-- A site nested under another one (MWC under MDS) is not in the outer
-	site's sync state, so a deploy leaves it alone. But the action removes
-	a folder that its state lists and the build lacks together with
-	everything inside, nested site included. Pass the nested folder as
-	`preserve` (`code-gallery/**`, one glob per line, relative to
-	`server-dir`) to make the deploy skip it.
+- The action keeps its sync state in `.ftp-deploy-sync-state.json` in
+	`server-dir`. It deletes what that file lists and the build lacks.
+	It deletes a listed folder together with everything inside it.
+	Thus a stale entry for the folder of a nested site, such as Mobile Web
+	Capture (MWC) under Mobile Document Scanner (MDS), deletes the nested
+	site. A local FTP server reproduced this. Nobody has yet confirmed a
+	stale entry on the live server. Pass the nested folder as `preserve`
+	(`code-gallery/**`, one glob per line, relative to `server-dir`) to
+	make the deploy skip it.
 
 ## Updating the corporate chrome
 
@@ -426,7 +429,7 @@ Releases are git tags on this public repository; consumers depend on it
 directly as a git dep (Setting up a docs site), so no registry is
 involved and installs need no auth. Publishing a version is: bump
 `version` in package.json, commit, tag `vX.Y.Z`, push the tag. Git deps
-are packed from the clone with normal `pnpm pack` semantics, and a tarball
+are packed from the clone with normal pack semantics, and a tarball
 install has been verified to build a consuming site end to end (the
 config factory handles the non-linked-install requirements:
 `ssr.noExternal` and `optimizeDeps.exclude`).

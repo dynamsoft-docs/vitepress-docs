@@ -29,8 +29,9 @@ on:
       preserve:
         description: >-
           Server directories of nested docs sites, one glob per line,
-          relative to server-dir, e.g. code-gallery/**. A deploy never
-          deletes or replaces anything that matches.
+          relative to server-dir, e.g. code-gallery/**. A deploy skips
+          what matches (README, Deployment). An explicit exclude replaces
+          the action defaults, so the deploy steps repeat them.
         type: string
         default: ""
     # Declared explicitly (not `secrets: inherit`): callers live in other
@@ -99,10 +100,10 @@ jobs:
       # versions.json in the docs package designates the versions (README →
       # Versioning model); ds-docs-build-versions builds each tracked branch
       # in a detached git worktree and assembles the tree together with the
-      # manifest (internally it runs vp install and vp run build per worktree,
-      # so each branch builds with its own package manager — each branch's
-      # `vitepress build`, since `vp doc` is not shipped yet).
-      # The same command works locally: pnpm run build:versions.
+      # manifest. Per worktree it runs vp install and vp run build, so each
+      # branch builds with its own package manager. Each branch runs
+      # `vitepress build`, because `vp doc` is not shipped yet).
+      # The same command works locally: vp run build:versions.
       # actions/checkout materializes sibling branches only as origin/*
       # remote refs, but ds-docs-build-versions resolves the manifest's
       # tracked branches by local name; give every remote branch a local
