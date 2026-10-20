@@ -9,6 +9,7 @@ here:
 - Nothing advertises it: robots.txt is at the domain root, corporate-owned,
 	and carries no `Sitemap:` line today.
 - Versioned copies are left out on purpose (a `DOCS_VERSION` build gets no
-	sitemap), so only "latest" is offered for indexing. They carry no
-	`noindex`, so a crawler that reaches a frozen copy some other way can
-	still index it.
+	sitemap), so only "latest" is offered for indexing. Their pages carry
+	`<meta name="robots" content="noindex">`, so a crawler that reaches a
+	versioned copy by another route does not index it. A copy that an older
+	release of this package built has no `noindex`.

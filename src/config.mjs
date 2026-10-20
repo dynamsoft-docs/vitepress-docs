@@ -417,12 +417,21 @@ export function defineDynamsoftConfig(config) {
 	return {
 		lastUpdated: true,
 		// The hostname carries the base path: a sitemap only covers URLs at or
-		// below its own location. Versioned copies are left unindexed.
+		// below its own location. Versioned copies are left unindexed, and their
+		// pages ask crawlers to skip them.
 		...(version ? {} : { sitemap: { hostname: siteUrl } }),
 		...config,
 		base,
 		head: [
 			["link", { rel: "icon", href: "https://www.dynamsoft.com/favicon.ico" }],
+			...(version
+				? [
+						/** @type {import("vitepress").HeadConfig} */ ([
+							"meta",
+							{ name: "robots", content: "noindex" },
+						]),
+					]
+				: []),
 			...(gtm
 				? /** @type {import("vitepress").HeadConfig[]} */ ([
 						[
