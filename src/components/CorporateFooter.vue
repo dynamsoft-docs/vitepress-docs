@@ -38,19 +38,20 @@ function onHostClick(event: Event) {
 	window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-const pageHeight = new ResizeObserver(update);
+let pageHeight: ResizeObserver | undefined;
 
 onMounted(() => {
 	update();
 	window.addEventListener("scroll", update, { passive: true });
 	window.addEventListener("resize", update, { passive: true });
+	pageHeight = new ResizeObserver(update);
 	pageHeight.observe(document.body);
 });
 
 onUnmounted(() => {
 	window.removeEventListener("scroll", update);
 	window.removeEventListener("resize", update);
-	pageHeight.disconnect();
+	pageHeight?.disconnect();
 	cancelAnimationFrame(raf);
 	document.documentElement.style.removeProperty("--ds-footer-overlap");
 });
