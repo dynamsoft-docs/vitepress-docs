@@ -26,6 +26,13 @@ on:
         description: "Docs package directory within the repository."
         type: string
         default: docs
+      preserve:
+        description: >-
+          Server directories of nested docs sites, one glob per line,
+          relative to server-dir, e.g. code-gallery/**. A deploy never
+          deletes or replaces anything that matches.
+        type: string
+        default: ""
     # Declared explicitly (not `secrets: inherit`): callers live in other
     # organizations, and GitHub only propagates inherited secrets within
     # one org/enterprise — across orgs, inherit silently passes nothing.
@@ -125,6 +132,11 @@ jobs:
           password: ${{ secrets.FTP_DYNAMSOFT_LOCAL_PASSWORD }}
           local-dir: _site/
           server-dir: ${{ inputs.server-dir }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            ${{ inputs.preserve }}
 
   # The test-site FTP endpoint is only reachable from self-hosted
   # upload-test runner.
@@ -148,3 +160,8 @@ jobs:
           port: ${{ secrets.FTP_TEST_SITE_PORT }}
           local-dir: _site/
           server-dir: ${{ inputs.server-dir }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            ${{ inputs.preserve }}

@@ -399,6 +399,12 @@ jobs:
 	site at `buildEnd`, like the version manifest, with the fleet's markdown
 	serving rules spliced in (Markdown for agents). `public/` is untracked
 	scratch space by fleet convention, so deploy files never live there.
+- A site nested under another one (MWC under MDS) is not in the outer
+	site's sync state, so a deploy leaves it alone. But the action removes
+	a folder that its state lists and the build lacks together with
+	everything inside, nested site included. Pass the nested folder as
+	`preserve` (`code-gallery/**`, one glob per line, relative to
+	`server-dir`) to make the deploy skip it.
 
 ## Updating the corporate chrome
 
