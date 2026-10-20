@@ -1,5 +1,5 @@
 // Public types for the config factories, re-exported by index.ts. Type-only,
-// so unlike the factories themselves this can be TypeScript (see the README).
+// so unlike the factories themselves this can be TypeScript (see CONTRIBUTING.md).
 
 import type { DefaultTheme } from "vitepress";
 

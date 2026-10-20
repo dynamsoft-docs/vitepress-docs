@@ -1,5 +1,5 @@
-# Reusable build/deploy job for Dynamsoft VitePress docs sites ( see README →
-# Deployment)
+# Reusable build/deploy job for Dynamsoft VitePress docs sites (see
+# docs/deployment.md)
 
 name: Docs Site
 
@@ -30,7 +30,7 @@ on:
         description: >-
           Server directories of nested docs sites, one glob per line,
           relative to server-dir, e.g. code-gallery/**. A deploy skips
-          what matches (README, Deployment). An explicit exclude replaces
+          what matches (docs/deployment.md). An explicit exclude replaces
           the action defaults, so the deploy steps repeat them.
         type: string
         default: ""
@@ -81,9 +81,8 @@ jobs:
               args: ["--frozen-lockfile"]
 
       # --- deploy: false — fast verification build of the current ref ---
-      # The docs build script still invokes the `vitepress` CLI directly:
-      # `vp doc` is not shipped in vite-plus 0.2.6 (the command exists but
-      # dist/vitepress is absent) — see README → TODO.
+      # TODO(017d332): the docs build script invokes the `vitepress` CLI
+      # directly, because vite-plus does not ship `vp doc` yet.
       - name: Build docs site (typedoc + vitepress)
         if: ${{ !inputs.deploy }}
         run: vp run build
@@ -97,12 +96,11 @@ jobs:
           retention-days: 7
 
       # --- deploy: true — build every designated version ---
-      # versions.json in the docs package designates the versions (README →
-      # Versioning model); ds-docs-build-versions builds each tracked branch
+      # versions.json in the docs package designates the versions (see
+      # docs/versioning.md). ds-docs-build-versions builds each tracked branch
       # in a detached git worktree and assembles the tree together with the
       # manifest. Per worktree it runs vp install and vp run build, so each
-      # branch builds with its own package manager. Each branch runs
-      # `vitepress build`, because `vp doc` is not shipped yet).
+      # branch builds with its own package manager.
       # The same command works locally: vp run build:versions.
       # actions/checkout materializes sibling branches only as origin/*
       # remote refs, but ds-docs-build-versions resolves the manifest's
