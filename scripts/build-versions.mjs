@@ -15,8 +15,6 @@ import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
-const LOCKFILES = ["package-lock.json", "pnpm-lock.yaml"];
-
 /** @typedef {{ label: string, path: string, branch?: string }} VersionEntry */
 
 const args = process.argv.slice(2);
@@ -80,12 +78,10 @@ for (const [i, version] of tracked.entries()) {
 					'track only branches that contain it (or drop "branch" to list without building)',
 			);
 		}
-		// vp installs with the package manager that the lockfile names. A docs
-		// directory in the root workspace shares the root lockfile.
+		// vp uses the package manager that package.json declares, else the one
+		// that the lockfile names. A frozen install fails without a lockfile.
 		run(vp, ["install", "--frozen-lockfile"], worktree);
-		if (LOCKFILES.some((name) => existsSync(join(worktreeDocs, name)))) {
-			run(vp, ["install", "--frozen-lockfile"], worktreeDocs);
-		}
+		if (worktreeDocs !== worktree) run(vp, ["install", "--frozen-lockfile"], worktreeDocs);
 		run(vp, ["run", "build"], worktreeDocs, {
 			DOCS_VERSION: version.path ?? "",
 			// Where the API reference points its source links.
