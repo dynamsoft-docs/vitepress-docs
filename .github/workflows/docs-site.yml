@@ -99,8 +99,9 @@ jobs:
       # versions.json in the docs package designates the versions (README →
       # Versioning model); ds-docs-build-versions builds each tracked branch
       # in a detached git worktree and assembles the tree together with the
-      # manifest (internally it shells npm ci / npm run build per worktree —
-      # each branch's `vitepress build`, since `vp doc` is not shipped yet).
+      # manifest (internally it runs vp install and vp run build per worktree,
+      # so each branch builds with its own package manager — each branch's
+      # `vitepress build`, since `vp doc` is not shipped yet).
       # The same command works locally: pnpm run build:versions.
       # actions/checkout materializes sibling branches only as origin/*
       # remote refs, but ds-docs-build-versions resolves the manifest's

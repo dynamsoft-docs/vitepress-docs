@@ -15,6 +15,8 @@ import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
+const LOCKFILES = ["package-lock.json", "pnpm-lock.yaml"];
+
 /** @typedef {{ label: string, path: string, branch?: string }} VersionEntry */
 
 const args = process.argv.slice(2);
@@ -29,7 +31,7 @@ const opt = (name, fallback) => {
 };
 
 const docsDir = process.cwd();
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const vp = process.platform === "win32" ? "vp.cmd" : "vp";
 /**
  * @param {string} cmd
  * @param {string[]} argv
@@ -78,9 +80,13 @@ for (const [i, version] of tracked.entries()) {
 					'track only branches that contain it (or drop "branch" to list without building)',
 			);
 		}
-		run(npm, ["ci"], worktree);
-		run(npm, ["ci"], worktreeDocs);
-		run(npm, ["run", "build"], worktreeDocs, {
+		// vp installs with the package manager that the lockfile names. A docs
+		// directory in the root workspace shares the root lockfile.
+		run(vp, ["install", "--frozen-lockfile"], worktree);
+		if (LOCKFILES.some((name) => existsSync(join(worktreeDocs, name)))) {
+			run(vp, ["install", "--frozen-lockfile"], worktreeDocs);
+		}
+		run(vp, ["run", "build"], worktreeDocs, {
 			DOCS_VERSION: version.path ?? "",
 			// Where the API reference points its source links.
 			DOCS_BRANCH: version.branch,
