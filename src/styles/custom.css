@@ -68,10 +68,21 @@
 	animation: ds-menu-open 0.2s ease;
 }
 
-/* Lift the footer over the fixed sidebar so it spans the full width. */
-.ds-corporate-footer {
-	position: relative;
-	z-index: 60;
+/* The sidebar and the page outline are fixed to the viewport. CorporateFooter.vue
+   publishes how much of the footer is in view, and both end above it. Below
+   960px the sidebar is an overlay and keeps its full height. */
+@media (min-width: 960px) {
+	.Layout .VPSidebar {
+		bottom: var(--ds-footer-overlap, 0px);
+	}
+
+	.VPDoc .aside-container {
+		height: calc(100vh - var(--ds-footer-overlap, 0px));
+	}
+
+	.VPDoc .aside-curtain {
+		bottom: var(--ds-footer-overlap, 0px);
+	}
 }
 
 /* CorporateFooter.vue marks the host once the reader is past the fold. */

@@ -13,10 +13,16 @@ const footer = computed(() => footerHtml.replaceAll("%%YEAR%%", String(new Date(
 const REVEAL_AFTER = 400;
 let raf = 0;
 
+// The sidebar and the outline are fixed to the viewport. Publish how much of
+// the footer is in view, so that custom.css can end them above it.
 function onScroll() {
 	cancelAnimationFrame(raf);
 	raf = requestAnimationFrame(() => {
-		host.value?.classList.toggle("ds-past-fold", window.scrollY > REVEAL_AFTER);
+		const el = host.value;
+		if (!el) return;
+		el.classList.toggle("ds-past-fold", window.scrollY > REVEAL_AFTER);
+		const overlap = Math.max(0, window.innerHeight - el.getBoundingClientRect().top);
+		document.documentElement.style.setProperty("--ds-footer-overlap", `${overlap}px`);
 	});
 }
 
@@ -29,11 +35,14 @@ function onHostClick(event: Event) {
 onMounted(() => {
 	onScroll();
 	window.addEventListener("scroll", onScroll, { passive: true });
+	window.addEventListener("resize", onScroll, { passive: true });
 });
 
 onUnmounted(() => {
 	window.removeEventListener("scroll", onScroll);
+	window.removeEventListener("resize", onScroll);
 	cancelAnimationFrame(raf);
+	document.documentElement.style.removeProperty("--ds-footer-overlap");
 });
 </script>
 
