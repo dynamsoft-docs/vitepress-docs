@@ -1,5 +1,3 @@
-# One package, at the root. pnpm reads its settings here.
-packages:
-  - "."
+# pnpm reads its settings here.
 overrides:
   vite: "npm:@voidzero-dev/vite-plus-core@0.2.7"
