@@ -11,7 +11,7 @@
  *
  * Usage: ds-docs-build-versions [--manifest versions.json] [--out <repo>/_site]
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
@@ -30,13 +30,14 @@ const opt = (name, fallback) => {
 
 const docsDir = process.cwd();
 /**
- * @param {string} cmd
- * @param {string[]} argv
+ * Run a fixed vp command line through the shell, so that a vp.cmd shim from
+ * node_modules/.bin resolves on Windows as well.
+ * @param {string} command
  * @param {string} cwd
  * @param {Record<string, string>} [env]
  */
-const run = (cmd, argv, cwd, env) =>
-	execFileSync(cmd, argv, {
+const run = (command, cwd, env) =>
+	execSync(command, {
 		cwd,
 		stdio: "inherit",
 		env: env ? { ...process.env, ...env } : process.env,
@@ -79,9 +80,9 @@ for (const [i, version] of tracked.entries()) {
 		}
 		// vp uses the package manager that package.json declares, else the one
 		// that the lockfile names. A frozen install fails without a lockfile.
-		run("vp", ["install", "--frozen-lockfile"], worktree);
-		if (worktreeDocs !== worktree) run("vp", ["install", "--frozen-lockfile"], worktreeDocs);
-		run("vp", ["run", "build"], worktreeDocs, {
+		run("vp install --frozen-lockfile", worktree);
+		if (worktreeDocs !== worktree) run("vp install --frozen-lockfile", worktreeDocs);
+		run("vp run build", worktreeDocs, {
 			DOCS_VERSION: version.path ?? "",
 			// Where the API reference points its source links.
 			DOCS_BRANCH: version.branch,

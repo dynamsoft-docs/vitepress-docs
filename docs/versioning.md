@@ -21,7 +21,7 @@ Each entry has these fields:
 
 The version builder is the command `ds-docs-build-versions`. It builds each tracked version in a detached git worktree. It creates the worktree as a sibling of the root of the repository, so that `file:` dependencies resolve. It builds the version with its subpath as the base.
 
-The builder runs `vp`, so `vp` must be on the `PATH`. On Windows, the installer of Vite+ provides `vp.exe` there.
+The builder runs `vp`. If `vp` is not on the `PATH`, start the builder through the package manager of the docs package. That puts `node_modules/.bin` on the `PATH`. Use `npx vp run build:versions` in a project that uses npm, and `pnpm exec vp run build:versions` in a project that uses pnpm. Plain `npx` fails in a project that pins pnpm in `devEngines`.
 
 The builder assembles the results and the manifest into one tree. The default location is `<repo>/_site`. The tree is ready to deploy as a whole.
 
