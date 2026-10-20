@@ -61,7 +61,7 @@ jobs:
   build:
     runs-on: [self-hosted, doc-build]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # Full history so every branch tracked by the version manifest can
           # be checked out and built.

@@ -21,7 +21,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Installs Vite+, Node, and the package manager at the versions pinned
       # in package.json devEngines.
