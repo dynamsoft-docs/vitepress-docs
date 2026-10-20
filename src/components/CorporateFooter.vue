@@ -13,16 +13,22 @@ const footer = computed(() => footerHtml.replaceAll("%%YEAR%%", String(new Date(
 const REVEAL_AFTER = 400;
 let raf = 0;
 
-// The sidebar and the outline are fixed to the viewport. Publish how much of
-// the footer is in view, so that custom.css can end them above it.
-function onScroll() {
+// The sidebar and the outline are fixed to the viewport. Write the visible
+// height of the footer to --ds-footer-overlap, so that custom.css can end both
+// above the footer. Scrolling, resizing, and a change of the page height move
+// the footer.
+let overlap = -1;
+
+function update() {
 	cancelAnimationFrame(raf);
 	raf = requestAnimationFrame(() => {
 		const el = host.value;
 		if (!el) return;
+		const next = Math.max(0, window.innerHeight - el.getBoundingClientRect().top);
 		el.classList.toggle("ds-past-fold", window.scrollY > REVEAL_AFTER);
-		const overlap = Math.max(0, window.innerHeight - el.getBoundingClientRect().top);
-		document.documentElement.style.setProperty("--ds-footer-overlap", `${overlap}px`);
+		if (next === overlap) return;
+		overlap = next;
+		document.documentElement.style.setProperty("--ds-footer-overlap", `${next}px`);
 	});
 }
 
@@ -32,15 +38,19 @@ function onHostClick(event: Event) {
 	window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+const pageHeight = new ResizeObserver(update);
+
 onMounted(() => {
-	onScroll();
-	window.addEventListener("scroll", onScroll, { passive: true });
-	window.addEventListener("resize", onScroll, { passive: true });
+	update();
+	window.addEventListener("scroll", update, { passive: true });
+	window.addEventListener("resize", update, { passive: true });
+	pageHeight.observe(document.body);
 });
 
 onUnmounted(() => {
-	window.removeEventListener("scroll", onScroll);
-	window.removeEventListener("resize", onScroll);
+	window.removeEventListener("scroll", update);
+	window.removeEventListener("resize", update);
+	pageHeight.disconnect();
 	cancelAnimationFrame(raf);
 	document.documentElement.style.removeProperty("--ds-footer-overlap");
 });

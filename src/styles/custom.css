@@ -68,16 +68,17 @@
 	animation: ds-menu-open 0.2s ease;
 }
 
-/* The sidebar and the page outline are fixed to the viewport. CorporateFooter.vue
-   publishes how much of the footer is in view, and both end above it. Below
-   960px the sidebar is an overlay and keeps its full height. */
+/* The sidebar and the page outline are fixed to the viewport. They end above
+   the footer by --ds-footer-overlap (see CorporateFooter.vue). Below 960px,
+   the VitePress breakpoint, the sidebar is an overlay with its full height. */
 @media (min-width: 960px) {
 	.Layout .VPSidebar {
 		bottom: var(--ds-footer-overlap, 0px);
 	}
 
 	.VPDoc .aside-container {
-		height: calc(100vh - var(--ds-footer-overlap, 0px));
+		height: auto;
+		bottom: var(--ds-footer-overlap, 0px);
 	}
 
 	.VPDoc .aside-curtain {
