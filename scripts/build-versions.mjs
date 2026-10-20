@@ -29,7 +29,6 @@ const opt = (name, fallback) => {
 };
 
 const docsDir = process.cwd();
-const vp = process.platform === "win32" ? "vp.cmd" : "vp";
 /**
  * @param {string} cmd
  * @param {string[]} argv
@@ -80,9 +79,9 @@ for (const [i, version] of tracked.entries()) {
 		}
 		// vp uses the package manager that package.json declares, else the one
 		// that the lockfile names. A frozen install fails without a lockfile.
-		run(vp, ["install", "--frozen-lockfile"], worktree);
-		if (worktreeDocs !== worktree) run(vp, ["install", "--frozen-lockfile"], worktreeDocs);
-		run(vp, ["run", "build"], worktreeDocs, {
+		run("vp", ["install", "--frozen-lockfile"], worktree);
+		if (worktreeDocs !== worktree) run("vp", ["install", "--frozen-lockfile"], worktreeDocs);
+		run("vp", ["run", "build"], worktreeDocs, {
 			DOCS_VERSION: version.path ?? "",
 			// Where the API reference points its source links.
 			DOCS_BRANCH: version.branch,

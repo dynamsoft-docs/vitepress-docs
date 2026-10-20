@@ -21,6 +21,8 @@ Each entry has these fields:
 
 The version builder is the command `ds-docs-build-versions`. It builds each tracked version in a detached git worktree. It creates the worktree as a sibling of the root of the repository, so that `file:` dependencies resolve. It builds the version with its subpath as the base.
 
+The builder runs `vp`, so `vp` must be on the `PATH`. On Windows, the installer of Vite+ provides `vp.exe` there.
+
 The builder assembles the results and the manifest into one tree. The default location is `<repo>/_site`. The tree is ready to deploy as a whole.
 
 Each build also gets its tracked branch as `DOCS_BRANCH`. The API reference uses it for the source links. Thus the manifest is the only place that names the branch of a version.
