@@ -137,10 +137,10 @@ Typedoc, `typedoc-plugin-markdown`, and `typedoc-vitepress-theme` generate `api/
 
 ### Markdown for npm
 
-The `ds-docs-npm-readme` command renders a guide page for npm. It does two things:
+The `ds-docs-npm-readme` command prints a guide page in a form that npm renders. It does two things:
 
 1. It makes the site-relative links absolute, against the production site root that the caller gives. It maps `.md` paths to the published `.html` pages.
-2. It changes the GitHub alert markers to plain `> **Note**` blockquotes, because npm renders neither links nor alerts of that kind.
+2. It changes the GitHub alert markers to plain `> **Note**` blockquotes, because npm renders neither site-relative links nor GitHub alerts.
 
 Some product repositories ship the full guide in their npm package. Such a repository runs the command in its publish workflow, just before `npm pack`:
 
