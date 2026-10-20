@@ -101,7 +101,7 @@ jobs:
       # in a detached git worktree and assembles the tree together with the
       # manifest (internally it shells npm ci / npm run build per worktree —
       # each branch's `vitepress build`, since `vp doc` is not shipped yet).
-      # The same command works locally: npm run build:versions.
+      # The same command works locally: pnpm run build:versions.
       # actions/checkout materializes sibling branches only as origin/*
       # remote refs, but ds-docs-build-versions resolves the manifest's
       # tracked branches by local name; give every remote branch a local

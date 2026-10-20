@@ -70,7 +70,7 @@ are the only files bare Node executes (VitePress externalizes bare specifiers
 when loading a site's config; typedoc loads `typedoc.config.mjs` the same
 way), and Node refuses to strip types inside `node_modules`, so a TypeScript
 factory would work in a linked checkout and fail on every git-dependency
-install. Their JSDoc is the source of the shipped declarations: `npm run
+install. Their JSDoc is the source of the shipped declarations: `pnpm run
 types` generates `types/`, committed so installs stay build-free and
 CI-checked for staleness. Public types live in `src/types.ts`.
 
@@ -81,8 +81,8 @@ CI-checked for staleness. Public types live in `src/types.ts`.
 {
 	"scripts": {
 		"api": "typedoc",
-		"dev": "npm run api && vitepress dev",
-		"build": "npm run api && vitepress build",
+		"dev": "pnpm run api && vitepress dev",
+		"build": "pnpm run api && vitepress build",
 		"preview": "vitepress preview",
 		"build:versions": "ds-docs-build-versions",
 	},
@@ -94,8 +94,8 @@ CI-checked for staleness. Public types live in `src/types.ts`.
 ```
 
 `#semver:` resolves against the repo's version tags (`v0.1.0`) and
-the consumer's lockfile pins the exact commit, so `npm ci` is
-reproducible. npm packs the clone with the usual `files`/`bin` rules, and
+the consumer's lockfile pins the exact commit, so `pnpm install --frozen-lockfile` is
+reproducible. pnpm packs the clone with the usual `files`/`bin` rules, and
 the package ships source with no `prepare` script, so nothing builds at
 install time.
 
@@ -167,7 +167,7 @@ build error, nothing for a link checker to catch.
 So `defineDynamsoftTypedoc` does not write one down. `versions.json`
 already names the branch each version is built from, and that branch is
 the source being documented: `ds-docs-build-versions` passes it as
-`DOCS_BRANCH`, and a plain `npm run api` uses the checked-out branch.
+`DOCS_BRANCH`, and a plain `pnpm run api` uses the checked-out branch.
 Nothing has to be kept in step, so nothing can fall behind.
 
 The branch must exist on the repository `repo` names — the public product
@@ -180,21 +180,21 @@ git for are already known, and left to find a repository itself it needs
 saying so. Link `{path}` is rooted at `displayBasePath`, not `basePath` as
 the option help claims.
 
-Install with `npm install` in the docs package (and in the repo root — the
+Install with `pnpm install` in the docs package (and in the repo root — the
 API reference is generated from the product's TypeScript source, which
 resolves types from the root `node_modules`). While this theme is consumed
-via a `file:` link, also run `npm install` in this checkout: Node and Vite
+via a `file:` link, also run `pnpm install` in this checkout: Node and Vite
 resolve imports from the real path, so the theme's own dependencies must be
 present in this package's `node_modules`, not just the consumer's.
 
 ## Commands (docs-site convention)
 
-| Command                  | Effect                                                                                                |
-| ------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `npm run dev`            | Generate API markdown, then serve the site locally with live reload                                   |
-| `npm run build`          | Generate API markdown, then build the static site to `.vitepress/dist/`                               |
-| `npm run api`            | Regenerate only the API reference (`api/`, gitignored)                                                |
-| `npm run build:versions` | Build every branch tracked by `versions.json` and assemble the multi-version tree into `<repo>/_site` |
+| Command                   | Effect                                                                                                |
+| ------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `pnpm run dev`            | Generate API markdown, then serve the site locally with live reload                                   |
+| `pnpm run build`          | Generate API markdown, then build the static site to `.vitepress/dist/`                               |
+| `pnpm run api`            | Regenerate only the API reference (`api/`, gitignored)                                                |
+| `pnpm run build:versions` | Build every branch tracked by `versions.json` and assemble the multi-version tree into `<repo>/_site` |
 
 ## Content conventions
 
@@ -346,10 +346,10 @@ deploy as a whole. Each build also gets its tracked branch as
 `<base>versions.json` in dev and copies it into single builds via
 `buildEnd`.
 
-`npm run dev` serves the **current checkout live** at the docs root and the
+`pnpm run dev` serves the **current checkout live** at the docs root and the
 **other versions statically** from the assembled tree at `<repo>/_site`, so
-the version switcher works in dev — run `npm run build:versions` once to
-assemble it first to serve it with `npm run dev`.
+the version switcher works in dev — run `pnpm run build:versions` once to
+assemble it first to serve it with `pnpm run dev`.
 
 ## Deployment (fleet convention)
 
@@ -412,7 +412,7 @@ Chrome _styling_ assets (fonts, images) track upstream at runtime; chrome
 _markup_ and the stylesheet cascade are vendored. Refresh with:
 
 ```shell
-npm run sync-chrome   # re-vendor markup + styles; review and commit the diff
+pnpm run sync-chrome   # re-vendor markup + styles; review and commit the diff
 ```
 
 Fetches Docs-Template-Repo from GitHub raw on `main` (`DOCS_TEMPLATE_BRANCH`
@@ -426,7 +426,7 @@ Releases are git tags on this public repository; consumers depend on it
 directly as a git dep (Setting up a docs site), so no registry is
 involved and installs need no auth. Publishing a version is: bump
 `version` in package.json, commit, tag `vX.Y.Z`, push the tag. Git deps
-are packed from the clone with normal `npm pack` semantics, and a tarball
+are packed from the clone with normal `pnpm pack` semantics, and a tarball
 install has been verified to build a consuming site end to end (the
 config factory handles the non-linked-install requirements:
 `ssr.noExternal` and `optimizeDeps.exclude`).

@@ -1,4 +1,4 @@
-// Declarations for the config factories, generated from their JSDoc (npm run
+// Declarations for the config factories, generated from their JSDoc (pnpm run
 // types). Emitted to types/, not src/, so nothing shadows the source.
 {
 	"extends": "./tsconfig.base.json",

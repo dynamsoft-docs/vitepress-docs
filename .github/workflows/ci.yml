@@ -45,6 +45,6 @@ jobs:
           vp run types
           if [ -n "$(git status --porcelain -- types)" ]; then
             git status --short -- types
-            echo "::error::types/ is stale — run 'npm run types' and commit the result"
+            echo "::error::types/ is stale — run 'pnpm run types' and commit the result"
             exit 1
           fi
