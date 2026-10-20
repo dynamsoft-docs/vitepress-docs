@@ -1,7 +1,6 @@
-# Versioning model
+# Versioning
 
-`versions.json` in the docs package designates exactly which branch is
-tracked for which version, with which label:
+The version manifest `versions.json` is in the docs package. It lists the versions of a docs site. Each entry has a label and a subpath. A tracked version also names a branch:
 
 ```jsonc
 {
@@ -12,24 +11,22 @@ tracked for which version, with which label:
 }
 ```
 
-- `label` — text shown in the version switcher.
-- `path` — URL subpath under `docsRoot`: `""` for the root/latest, otherwise
-	with a trailing slash.
-- `branch` — the git branch built for this version. Only branches containing
-	the docs toolchain can be tracked; entries without a `branch` are listed in
-	the switcher but not built (frozen copies that live only on the server).
+Each entry has these fields:
 
-The `ds-docs-build-versions` bin builds every branch-tracked entry in a
-detached git worktree (created as a sibling of the repo root so `file:`
-dependencies resolve) with its subpath as the base, and assembles the
-results plus the manifest into one tree (default `<repo>/_site`), ready to
-deploy as a whole. Each build also gets its tracked branch as
-`DOCS_BRANCH`, which is where its API reference points its source links
-— so the manifest is the only place a version's branch is named.
-`defineDynamsoftConfig` serves the manifest at `<base>versions.json` in dev
-and copies it into single builds via `buildEnd`.
+- `label` is the text that the version switcher shows.
+- `path` is the URL subpath under `docsRoot`. The latest version has `""`. Every other version has a trailing slash.
+- `branch` is the git branch that the version builder builds for the version. Only a branch that holds the docs toolchain can be a tracked version. An entry without `branch` appears in the switcher but is not built. Such a copy exists only on the server, as a frozen copy.
 
-`vp run dev` serves the **current checkout live** at the docs root and the
-**other versions statically** from the assembled tree at `<repo>/_site`, so
-the version switcher works in dev — run `vp run build:versions` once to
-assemble it first to serve it with `vp run dev`.
+## Build every version
+
+The version builder is the command `ds-docs-build-versions`. It builds each tracked version in a detached git worktree. It creates the worktree as a sibling of the root of the repository, so that `file:` dependencies resolve. It builds the version with its subpath as the base.
+
+The builder assembles the results and the manifest into one tree. The default location is `<repo>/_site`. The tree is ready to deploy as a whole.
+
+Each build also gets its tracked branch as `DOCS_BRANCH`. The API reference uses it for the source links. Thus the manifest is the only place that names the branch of a version.
+
+`defineDynamsoftConfig` serves the manifest at `<base>versions.json` in dev. It copies the manifest into single builds with `buildEnd`.
+
+## Develop with the other versions
+
+`vp run dev` serves the current checkout live at the docs root. It serves the other versions as static files from the assembled tree at `<repo>/_site`. Thus the version switcher works in dev. Run `vp run build:versions` once to assemble the tree before you run `vp run dev`.

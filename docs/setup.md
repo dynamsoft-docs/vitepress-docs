@@ -1,4 +1,10 @@
-# Setting up a docs site
+# Set up a docs site
+
+This page explains how to add the theme to the docs package of a product. The docs package is the directory `docs/` in these examples.
+
+## Add the package
+
+Add the package as a git dependency, and add the scripts of a docs site:
 
 ```jsonc
 // docs/package.json
@@ -17,17 +23,21 @@
 }
 ```
 
-`#semver:` resolves against the repo's version tags (`v0.1.0`) and
-the consumer's lockfile pins the exact commit, so
-`vp install --frozen-lockfile` is reproducible. The package manager packs
-the clone with the usual `files`/`bin` rules, and the package ships source
-with no `prepare` script, so nothing builds at install time.
+The range `#semver:` matches the version tags of the repository, such as `v0.1.0`. The lockfile of the docs package pins the exact commit. Thus `vp install --frozen-lockfile` gives the same result each time.
+
+The package manager packs the clone with the usual `files` and `bin` rules. The package ships source and has no `prepare` script, so nothing builds at install time.
+
+## Add the theme and the config
+
+Export the theme from the theme entry:
 
 ```ts
 // docs/.vitepress/theme/index.ts
 import DynamsoftTheme from "@dynamsoft-docs/vitepress-docs";
 export default DynamsoftTheme;
 ```
+
+Wrap the VitePress config of the site with `defineDynamsoftConfig`:
 
 ```ts
 // docs/.vitepress/config.mts
@@ -48,23 +58,29 @@ export default defineDynamsoftConfig({
 });
 ```
 
+Use this `tsconfig.json` to check the types of the config and theme files:
+
 ```jsonc
-// docs/tsconfig.json — typechecking for the config/theme files
+// docs/tsconfig.json
 {
 	"extends": "@dynamsoft-docs/vitepress-docs/tsconfig.base.json",
 	"include": ["env.d.ts", ".vitepress/**/*.ts", ".vitepress/**/*.mts", ".vitepress/**/*.vue"],
 }
 ```
 
+## Generate the API reference
+
+Configure typedoc with `defineDynamsoftTypedoc`:
+
 ```ts
-// docs/typedoc.config.mjs — API reference generation
+// docs/typedoc.config.mjs
 import { defineDynamsoftTypedoc } from "@dynamsoft-docs/vitepress-docs/typedoc";
 
 // Fleet conventions: markdown + vitepress plugins, out: "api" wiped per
 // run, no README page, private/internal excluded, plus the source-link
 // revision below. Path-type options (out, docsRoot, basePath, tsconfig,
 // entryPoints) resolve relative to the file DECLARING them, which is this
-// one — so they stay here rather than in the theme.
+// one, so they stay here and not in the theme.
 export default defineDynamsoftTypedoc({
 	name: "Your Product API Reference",
 	repo: "Dynamsoft/your-product", // builds sourceLinkTemplate
@@ -76,73 +92,60 @@ export default defineDynamsoftTypedoc({
 });
 ```
 
-Keep the config in a `.mjs` file: typedoc prefers a `typedoc.json` over a
-`typedoc.config.mjs` in the same directory, so a leftover JSON config
-silently wins.
+Keep this config in a `.mjs` file. Typedoc prefers a `typedoc.json` over a `typedoc.config.mjs` in the same directory. Thus a leftover JSON config silently wins.
+
+Run `vp install` in the docs package and in the root of the repository. The API reference comes from the TypeScript source of the product, and that source resolves its types from the root `node_modules`.
 
 ## Source links and `gitRevision`
 
-Typedoc takes line numbers from the working tree, then writes them into
-links against whatever `gitRevision` names, and never checks that the two
-are the same code. A hand-written revision that falls behind therefore
-produces links that resolve fine and land in the wrong place — no 404, no
-build error, nothing for a link checker to catch.
+Typedoc takes line numbers from the working tree. It writes them into links against the revision that `gitRevision` names. It never checks that the two are the same code. Thus a hand-written revision that falls behind gives links that resolve but land in the wrong place. The build shows no error, and a link checker finds nothing.
 
-So `defineDynamsoftTypedoc` does not write one down. `versions.json`
-already names the branch each version is built from, and that branch is
-the source being documented: `ds-docs-build-versions` passes it as
-`DOCS_BRANCH`, and a plain `vp run api` uses the checked-out branch.
-Nothing has to be kept in step, so nothing can fall behind.
+`defineDynamsoftTypedoc` does not write a revision. The version manifest already names the branch of each version, and that branch is the documented source. The version builder passes the branch as `DOCS_BRANCH`. A plain `vp run api` uses the checked-out branch. Nothing needs a manual update, so nothing falls behind.
 
-The branch must exist on the repository `repo` names — the public product
-repo, not the internal one. `gitRevision` overrides all of this.
+The option `repo` names the public product repository. The branch must exist there. The internal repository does not count. The option `gitRevision` overrides all of this.
 
-With a `sourceLinkTemplate` in play the factory also sets `disableGit` and
-roots `displayBasePath` at the product: both values typedoc would go to
-git for are already known, and left to find a repository itself it needs
-`.git` to be a directory, finds none, and drops every source link without
-saying so. Link `{path}` is rooted at `displayBasePath`, not `basePath` as
-the option help claims.
+When a `sourceLinkTemplate` exists, the factory also sets `disableGit` and roots `displayBasePath` at the product. Typedoc would otherwise search git for both values, and the factory already knows them. Typedoc needs `.git` to be a directory. Where it finds none, it drops every source link without a warning. The link placeholder `{path}` is rooted at `displayBasePath`. The help text of the option says `basePath`, and that text is wrong.
 
-Install with `vp install` in the docs package (and in the repo root — the
-API reference is generated from the product's TypeScript source, which
-resolves types from the root `node_modules`). While this theme is consumed
-via a `file:` link, also run `pnpm install` in this checkout: Node and Vite
-resolve imports from the real path, so the theme's own dependencies must be
-present in this package's `node_modules`, not just the consumer's.
+## Develop the theme with a `file:` link
+
+When a docs package uses this theme through a `file:` link, also run `pnpm install` in the checkout of this package. Node and Vite resolve imports from the real path. Thus the dependencies of the theme must be in the `node_modules` of this package, and the `node_modules` of the docs package is not enough.
 
 ## Commands
 
-| Command                 | Effect                                                                                                |
-| ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| `vp run dev`            | Generate API markdown, then serve the site locally with live reload                                   |
-| `vp run build`          | Generate API markdown, then build the static site to `.vitepress/dist/`                               |
-| `vp run api`            | Regenerate only the API reference (`api/`, gitignored)                                                |
-| `vp run build:versions` | Build every branch tracked by `versions.json` and assemble the multi-version tree into `<repo>/_site` |
+Each docs package has these scripts:
+
+| Command                 | Effect                                                                                 |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `vp run dev`            | Generates the API markdown, then serves the site locally with live reload.             |
+| `vp run build`          | Generates the API markdown, then builds the static site to `.vitepress/dist/`.         |
+| `vp run api`            | Generates only the API reference in `api/`. Git ignores this directory.                |
+| `vp run build:versions` | Builds every tracked version and assembles the multi-version tree into `<repo>/_site`. |
 
 ## Content conventions
 
-- `api/` is generated from TSDoc comments via typedoc +
-	typedoc-plugin-markdown + typedoc-vitepress-theme. VitePress has no built-in
-	for file-structure sidebar derivation. `loadApiSidebar` marks the camelCase
-	boundaries in the entry names with `<wbr>`: a name like
-	`DocumentCorrectionViewToolbarButtonsConfig` is one unbreakable word wider
-	than the sidebar column, and the CSS fallback for that breaks it mid-word.
-	The default theme renders sidebar and prev/next labels as HTML, and `<wbr>`
-	leaves nothing behind in copied text.
-- GFM callouts (`> [!NOTE]` etc.) render GitHub-style out of the box.
-- The `ds-docs-npm-readme` bin renders a guide page npm-ready: it prints the
-	page with site-relative links absolutized against the given production
-	site root (`.md` paths mapped to the published `.html` pages) and GFM
-	alert markers downgraded to plain `> **Note**` blockquotes — npm renders
-	neither. Product repos whose npm package should carry the full guide run
-	it in their publish workflow just before `npm pack`:
-	`ds-docs-npm-readme guide/index.md --site https://…/docs/web/ > README.md`.
-	It is dependency-free, so it can also be run with plain `node` straight
-	from a checkout of this repo.
-- A docs `README.md` is excluded from the site (it documents the docs setup).
-- Single-sourcing pattern: a docs page can include a repository file via
-	VitePress markdown inclusion, whole (e.g. a changelog page including the
-	root `CHANGELOG.md`) or partially with `<!-- #region ... -->` markers.
-	Includes fail **silently** — if the page renders empty, check the included
-	file and markers still exist.
+### The API sidebar
+
+Typedoc, `typedoc-plugin-markdown`, and `typedoc-vitepress-theme` generate `api/` from the TSDoc comments. VitePress has no built-in way to derive a sidebar from a file structure, so `loadApiSidebar` builds it.
+
+`loadApiSidebar` marks the camelCase boundaries in the entry names with `<wbr>`. A name such as `DocumentCorrectionViewToolbarButtonsConfig` is one unbreakable word. It is wider than the sidebar column, and the CSS fallback breaks it in the middle of a word. The default theme renders the sidebar labels and the previous and next labels as HTML. The `<wbr>` tag leaves nothing in copied text.
+
+### Other conventions
+
+- GitHub-style callouts (`> [!NOTE]` and the like) render without more setup.
+- A `README.md` in the docs package is not part of the site. It documents the setup of the docs package.
+- A docs page can include a repository file with VitePress markdown inclusion. The page includes the whole file, for example the root `CHANGELOG.md`. It can also include a part of the file between `<!-- #region ... -->` markers. An include that fails shows no error. If the page renders empty, check that the file and the markers exist.
+
+### Markdown for npm
+
+The `ds-docs-npm-readme` command renders a guide page for npm. It does two things:
+
+1. It makes the site-relative links absolute, against the production site root that the caller gives. It maps `.md` paths to the published `.html` pages.
+2. It changes the GitHub alert markers to plain `> **Note**` blockquotes, because npm renders neither links nor alerts of that kind.
+
+Some product repositories ship the full guide in their npm package. Such a repository runs the command in its publish workflow, just before `npm pack`:
+
+```shell
+ds-docs-npm-readme guide/index.md --site https://…/docs/web/ > README.md
+```
+
+The command has no dependencies. Thus you can also run it with plain `node` from a checkout of this repository.
