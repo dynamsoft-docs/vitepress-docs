@@ -143,6 +143,11 @@
 	padding-left: 0 !important;
 }
 
+/* The rule already spans the sidebar, so drop VitePress's lighter segment over it. */
+.VPNavBar.has-sidebar .divider::before {
+	content: none !important;
+}
+
 .VPNavBar .search,
 .VPNavBarSearch {
 	flex-grow: 0 !important;
