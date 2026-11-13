@@ -118,3 +118,9 @@
 	color: var(--vp-code-color);
 	background-color: var(--vp-code-bg);
 }
+
+/* github-base.css sets only a bottom margin, so an alert would touch the heading
+   above it. Space it as VitePress spaces a paragraph. */
+.vp-doc .markdown-alert {
+	margin: 16px 0;
+}
